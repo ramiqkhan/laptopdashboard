@@ -40,6 +40,8 @@ const Navbar = () => {
           <NavLink to="/" className={activeLink}>Dashboard</NavLink>
           <NavLink to="/Product" className={activeLink}>Products</NavLink>
           <NavLink to="/orders" className={activeLink}>Orders</NavLink>
+                    <NavLink to="/featured" onClick={() => setMobileOpen(false)} className={activeLink}>Featured Products</NavLink>
+    <NavLink to="/deals" onClick={() => setMobileOpen(false)} className={activeLink}>Deals</NavLink>
         </div>
 
         {/* MOBILE TOGGLE */}
@@ -57,7 +59,8 @@ const Navbar = () => {
           <NavLink to="/" onClick={() => setMobileOpen(false)} className={activeLink}>Dashboard</NavLink>
           <NavLink to="/products" onClick={() => setMobileOpen(false)} className={activeLink}>Products</NavLink>
           <NavLink to="/orders" onClick={() => setMobileOpen(false)} className={activeLink}>Orders</NavLink>
-          
+          <NavLink to="/featured" onClick={() => setMobileOpen(false)} className={activeLink}>Featured Products</NavLink>
+          <NavLink to="/deals" onClick={() => setMobileOpen(false)} className={activeLink}>Deals</NavLink>
           <div className="h-[1px] w-full bg-gray-100 my-2" />
         </div>
       )}
