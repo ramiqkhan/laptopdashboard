@@ -13,7 +13,7 @@ const ProductAdmin = () => {
   const [newProduct, setNewProduct] = useState({
     name: "", brand: "", category: "normal", price: "", 
     processor: "", ram: "", storage: "", gpu: "", 
-    display: "", os: "", features: "", stock: 0,
+    display: "", os: "", features: "", stock: 0,averageRating: 0,
   });
 
   const API_URL = "http://localhost:5000/api/products";
@@ -79,7 +79,7 @@ const ProductAdmin = () => {
         setNewProduct({
           name: "", brand: "", category: "normal", price: "", 
           processor: "", ram: "", storage: "", gpu: "", 
-          display: "", os: "", features: "", stock: 0,
+          display: "", os: "", features: "", stock: 0,ratings: 0,
         });
         setImageFiles([]);
         fetchProducts();
@@ -94,7 +94,7 @@ const ProductAdmin = () => {
     
     // Clean data: Metadata remove karein taake backend crash na ho
     Object.keys(editFormData).forEach(key => {
-      if (!["_id", "__v", "image", "images", "createdAt", "updatedAt", "ratings", "averageRating"].includes(key)) {
+      if (!["_id", "__v", "image", "images", "createdAt", "updatedAt", "ratings", "ratings"].includes(key)) {
         formData.append(key, editFormData[key]);
       }
     });
@@ -163,6 +163,7 @@ const ProductAdmin = () => {
                 <th className="p-6">Core Specs</th>
                 <th className="p-6">GPU & OS</th>
                 <th className="p-6">Inventory</th>
+        
                 <th className="p-6 text-right">Actions</th>
               </tr>
             </thead>
@@ -318,6 +319,16 @@ const ProductAdmin = () => {
                 onChange={(e) => setEditFormData({ ...editFormData, stock: e.target.value })} 
                 placeholder="Stock"
               />
+  <input 
+        type="number"
+        step="0.1"
+        max="5"
+        className="bg-gray-50 p-1.5 rounded text-[10px] font-bold text-yellow-600 outline-none mt-1" 
+        value={editFormData.averageRating} 
+        onChange={(e) => setEditFormData({ ...editFormData, averageRating: e.target.value })} 
+        placeholder="Rating (0-5)"
+      />
+    
             </div>
           ) : (
             <div className="flex flex-col">
@@ -325,6 +336,10 @@ const ProductAdmin = () => {
               <span className={`text-[10px] font-bold uppercase ${p.stock > 0 ? "text-green-500" : "text-red-500"}`}>
                 Stock: {p.stock}
               </span>
+              {/* ADD THIS FIELD */}
+<span className="text-[10px] font-bold text-yellow-500 mt-1">
+        ⭐ {p.averageRating || "0.0"}
+      </span>
             </div>
           )}
         </td>
@@ -386,6 +401,13 @@ const ProductAdmin = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <input type="number" placeholder="Price (PKR)" onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold" />
                   <input type="number" placeholder="Stock" onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold" />
+              <input 
+    type="number" 
+    step="0.1" 
+    placeholder="Rating (0-5)" 
+    onChange={(e) => setNewProduct({ ...newProduct, averageRating: e.target.value })} 
+    className="bg-gray-50 p-4 rounded-xl outline-none font-bold text-yellow-600" 
+  />
                 </div>
 
                 <div className="p-4 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FaEdit, FaTrash, FaPlus, FaSave, FaTimes } from "react-icons/fa";
+import { FaEdit, FaTrash, FaPlus, FaSave, FaTimes, FaStar } from "react-icons/fa";
 
 const FeaturedProductAdmin = () => {
   const [products, setProducts] = useState([]);
@@ -7,10 +7,10 @@ const FeaturedProductAdmin = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editFormData, setEditFormData] = useState({});
-  const [imageFiles, setImageFiles] = useState([]); 
+  const [imageFiles, setImageFiles] = useState([]);
 
   const [newProduct, setNewProduct] = useState({
-    name: "", price: "", processor: "", ram: "", storage: "", graphics: "", display: "", os: "", features: "", stock: ""
+    name: "", price: "", processor: "", ram: "", storage: "", graphics: "", display: "", os: "", features: "", stock: "", averageRating: ""
   });
 
   const API_URL = "http://localhost:5000/api/featured-products";
@@ -40,65 +40,99 @@ const FeaturedProductAdmin = () => {
   const handleAddProduct = async (e) => {
     e.preventDefault();
     const formData = new FormData();
-    Object.keys(newProduct).forEach(key => formData.append(key, newProduct[key]));
     
+    Object.keys(newProduct).forEach(key => {
+   if (key === "averageRating") {
+  let val = newProduct[key];
+
+  if (Array.isArray(val)) {
+    val = val[0];
+  }
+
+  if (val === "" || val === null || val === undefined) {
+    val = 0;
+  }
+
+  const sanitized = parseFloat(val);
+  formData.append("averageRating", isNaN(sanitized) ? 0 : sanitized);
+}else {
+        formData.append(key, newProduct[key]);
+      }
+    });
+
     if (imageFiles.length > 0) {
-      imageFiles.forEach(file => formData.append("images", file)); 
+      imageFiles.forEach(file => formData.append("images", file));
     }
 
     try {
       const res = await fetch(`${API_URL}/add`, { method: "POST", body: formData });
       if (res.ok) {
         setShowAddModal(false);
-        setNewProduct({ name: "", price: "", processor: "", ram: "", storage: "", graphics: "", display: "", os: "", features: "", stock: "" });
-        setImageFiles([]); 
+        setNewProduct({ name: "", price: "", processor: "", ram: "", storage: "", graphics: "", display: "", os: "", features: "", stock: "", averageRating: "" });
+        setImageFiles([]);
         fetchProducts();
         alert("Featured product added!");
       }
     } catch (err) { alert("Add failed"); }
   };
 
-  // --- UPDATED SAVE EDIT FUNCTION ---
-  const handleSaveEdit = async (id) => {
-    const formData = new FormData();
-    
-    // Copy data and handle features array
-    const finalData = { ...editFormData };
-    if (Array.isArray(finalData.features)) {
-        finalData.features = finalData.features.join(", ");
-    }
-    
-    // Append all fields except image related metadata
-    Object.keys(finalData).forEach(key => {
-      if (key !== "_id" && key !== "__v" && key !== "image" && key !== "images" && key !== "createdAt" && key !== "updatedAt") {
+const handleSaveEdit = async (id) => {
+  const formData = new FormData();
+  const finalData = { ...editFormData };
+
+  if (Array.isArray(finalData.features)) {
+    finalData.features = finalData.features.join(", ");
+  }
+
+  Object.keys(finalData).forEach((key) => {
+    if (!["_id", "__v", "image", "images", "createdAt", "updatedAt"].includes(key)) {
+      
+  if (key === "averageRating") {
+  let val = finalData[key];
+
+  // If array comes
+  if (Array.isArray(val)) {
+    val = val[0];
+  }
+
+  // If empty, null, undefined → 0
+  if (val === "" || val === null || val === undefined) {
+    val = 0;
+  }
+
+  const sanitizedRating = parseFloat(val);
+
+  // If still NaN → 0
+  formData.append("averageRating", isNaN(sanitizedRating) ? 0 : sanitizedRating);
+} else {
         formData.append(key, finalData[key]);
       }
+    }
+  });
+
+  if (imageFiles.length > 0) {
+    imageFiles.forEach((file) => formData.append("images", file));
+  }
+
+  try {
+    const res = await fetch(`${API_URL}/edit/${id}`, {
+      method: "PUT",
+      body: formData
     });
 
-    // Append new images ONLY if user selected new ones
-    if (imageFiles.length > 0) {
-      imageFiles.forEach(file => formData.append("images", file));
+    if (res.ok) {
+      setEditingId(null);
+      setImageFiles([]);
+      fetchProducts();
+      alert("Updated Successfully!");
+    } else {
+      const errorData = await res.json();
+      alert(`Update failed: ${errorData.error || "Check console"}`);
     }
-
-    try {
-      const res = await fetch(`${API_URL}/edit/${id}`, { 
-        method: "PUT", 
-        body: formData 
-      });
-      
-      if (res.ok) {
-        setEditingId(null);
-        setImageFiles([]);
-        fetchProducts();
-        alert("Updated Successfully!");
-      } else {
-        const errorData = await res.json();
-        alert(`Update failed: ${errorData.error || "Unknown error"}`);
-      }
-    } catch (err) { 
-      alert("Update failed connectivity issue"); 
-    }
-  };
+  } catch (err) {
+    alert("Update failed connectivity issue");
+  }
+};
 
   const handleDelete = async (id) => {
     if (window.confirm("Delete this featured unit?")) {
@@ -142,7 +176,6 @@ const FeaturedProductAdmin = () => {
                     <td className="p-6">
                       <div className="flex items-center gap-4">
                         <div className="relative">
-                          {/* Yahan imageFiles length check ki hai editing mode ke liye */}
                           <img src={renderImage(p.images || p.image)} alt="" className="w-16 h-12 object-contain rounded-lg border bg-white shadow-sm" />
                           {p.images?.length > 1 && (
                             <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-[8px] px-1.5 py-0.5 rounded-full font-black">+{p.images.length - 1}</span>
@@ -150,14 +183,14 @@ const FeaturedProductAdmin = () => {
                         </div>
                         <div className="flex flex-col">
                           {editingId === p._id ? (
-                            <input className="border-b font-bold mb-1 outline-none focus:border-black p-1" value={editFormData.name} onChange={(e) => setEditFormData({...editFormData, name: e.target.value})} />
+                            <input className="border-b font-bold mb-1 outline-none focus:border-black p-1" value={editFormData.name || ""} onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })} />
                           ) : (
                             <span className="font-bold text-slate-800">{p.name}</span>
                           )}
                           {editingId === p._id && (
                             <div className="mt-2">
-                                <p className="text-[8px] font-bold uppercase text-blue-600 mb-1">Update Images:</p>
-                                <input type="file" multiple className="text-[10px]" onChange={(e) => setImageFiles(Array.from(e.target.files))} />
+                              <p className="text-[8px] font-bold uppercase text-blue-600 mb-1">Update Images:</p>
+                              <input type="file" multiple className="text-[10px]" onChange={(e) => setImageFiles(Array.from(e.target.files))} />
                             </div>
                           )}
                         </div>
@@ -167,9 +200,9 @@ const FeaturedProductAdmin = () => {
                     <td className="p-6">
                       {editingId === p._id ? (
                         <div className="flex flex-col gap-1">
-                          <input className="border-b text-xs outline-none p-1" value={editFormData.processor} onChange={(e) => setEditFormData({...editFormData, processor: e.target.value})} placeholder="CPU" />
-                          <input className="border-b text-xs outline-none p-1" value={editFormData.ram} onChange={(e) => setEditFormData({...editFormData, ram: e.target.value})} placeholder="RAM" />
-                          <input className="border-b text-xs outline-none p-1" value={editFormData.storage} onChange={(e) => setEditFormData({...editFormData, storage: e.target.value})} placeholder="Storage" />
+                          <input className="border-b text-xs outline-none p-1" value={editFormData.processor || ""} onChange={(e) => setEditFormData({ ...editFormData, processor: e.target.value })} placeholder="CPU" />
+                          <input className="border-b text-xs outline-none p-1" value={editFormData.ram || ""} onChange={(e) => setEditFormData({ ...editFormData, ram: e.target.value })} placeholder="RAM" />
+                          <input className="border-b text-xs outline-none p-1" value={editFormData.storage || ""} onChange={(e) => setEditFormData({ ...editFormData, storage: e.target.value })} placeholder="Storage" />
                         </div>
                       ) : (
                         <div className="flex flex-col">
@@ -182,8 +215,19 @@ const FeaturedProductAdmin = () => {
                     <td className="p-6">
                       {editingId === p._id ? (
                         <div className="flex flex-col gap-1">
-                          <input className="border-b text-xs outline-none p-1" value={editFormData.stock} onChange={(e) => setEditFormData({...editFormData, stock: e.target.value})} placeholder="Stock" />
-                          <input className="border-b text-xs outline-none p-1" value={editFormData.graphics} onChange={(e) => setEditFormData({...editFormData, graphics: e.target.value})} placeholder="GPU" />
+                          <input className="border-b text-xs outline-none p-1" value={editFormData.stock || ""} onChange={(e) => setEditFormData({ ...editFormData, stock: e.target.value })} placeholder="Stock" />
+                          <input className="border-b text-xs outline-none p-1" value={editFormData.graphics || ""} onChange={(e) => setEditFormData({ ...editFormData, graphics: e.target.value })} placeholder="GPU" />
+                          <div className="flex items-center gap-1 bg-yellow-50 p-1 rounded border border-yellow-100">
+                            <span className="text-yellow-600 text-[10px] font-black">★</span>
+                        <input
+  type="number" step="0.1" max="5" min="0"
+  className="bg-transparent text-[10px] font-black text-yellow-700 outline-none w-full"
+  // FIX: Agar value 0 hai to khali string dikhao taake placeholder nazar aaye
+  value={editFormData.averageRating === 0 ? "" : editFormData.averageRating}
+  onChange={(e) => setEditFormData({ ...editFormData, averageRating: e.target.value })}
+  placeholder="Rating"
+/>
+                          </div>
                         </div>
                       ) : (
                         <div className="flex flex-col">
@@ -191,13 +235,21 @@ const FeaturedProductAdmin = () => {
                             {p.stock > 0 ? `${p.stock} Units In Stock` : 'Out Of Stock'}
                           </span>
                           <span className="text-[11px] text-blue-500 font-bold uppercase">{p.graphics}</span>
+                          <div className="flex items-center gap-1.5">
+                            <div className="flex text-yellow-400 text-[10px]">
+                              <FaStar />
+                            </div>
+                            <span className="text-[11px] font-black text-slate-800 tracking-tight">
+                              { p.averageRating || "0.0"} <span className="text-gray-400 font-normal">/ 5.0</span>
+                            </span>
+                          </div>
                         </div>
                       )}
                     </td>
 
                     <td className="p-6 font-black text-slate-900">
                       {editingId === p._id ? (
-                        <input type="number" className="border-b text-xs w-24 outline-none font-black p-1" value={editFormData.price} onChange={(e) => setEditFormData({...editFormData, price: e.target.value})} />
+                        <input type="number" className="border-b text-xs w-24 outline-none font-black p-1" value={editFormData.price || ""} onChange={(e) => setEditFormData({ ...editFormData, price: e.target.value })} />
                       ) : (
                         <span>PKR {p.price?.toLocaleString()}</span>
                       )}
@@ -211,7 +263,7 @@ const FeaturedProductAdmin = () => {
                         </div>
                       ) : (
                         <div className="flex gap-2 justify-end">
-                          <button onClick={() => { setEditingId(p._id); setEditFormData(p); setImageFiles([]); }} className="p-2 hover:bg-slate-100 text-slate-600 rounded-lg transition-colors"><FaEdit size={12} /></button>
+                          <button onClick={() => { setEditingId(p._id); setEditFormData({ ...p, averageRating: p.ratings || 0 }); setImageFiles([]); }} className="p-2 hover:bg-slate-100 text-slate-600 rounded-lg transition-colors"><FaEdit size={12} /></button>
                           <button onClick={() => handleDelete(p._id)} className="p-2 hover:bg-red-50 text-red-500 rounded-lg transition-colors"><FaTrash size={12} /></button>
                         </div>
                       )}
@@ -231,45 +283,46 @@ const FeaturedProductAdmin = () => {
               <h2 className="text-3xl font-black uppercase tracking-tighter italic">Featured Asset Entry</h2>
               <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-black transition-colors"><FaTimes size={24} /></button>
             </div>
-            
+
             <form onSubmit={handleAddProduct} className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
               <div className="space-y-4">
                 <p className="text-[10px] font-black uppercase text-blue-600 tracking-widest border-l-4 border-blue-600 pl-2">Asset Details</p>
                 <input placeholder="Model Name" onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })} required className="w-full bg-gray-50 p-4 rounded-xl outline-none font-bold focus:bg-white border-transparent focus:border-black border transition-all" />
                 <div className="grid grid-cols-2 gap-4">
-                    <input type="number" placeholder="Price (PKR)" onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold border-transparent focus:border-black border transition-all" />
-                    <input type="number" placeholder="Stock Quantity" onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold border-transparent focus:border-black border transition-all" />
+                  <input type="number" placeholder="Price (PKR)" onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold border-transparent focus:border-black border transition-all" />
+                  <input type="number" placeholder="Stock Quantity" onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold border-transparent focus:border-black border transition-all" />
                 </div>
-         <div className="p-4 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
-  <p className="text-[9px] font-black uppercase mb-2">Display Gallery (Multiple)</p>
-<input 
-  type="file" 
-  multiple
-  name="images"
-  className="text-xs w-full cursor-pointer" 
-  onChange={(e) => {
-    const selectedFiles = Array.from(e.target.files);
-    setImageFiles(prev => [...prev, ...selectedFiles]); // append instead of replace
-    e.target.value = null; // reset input so same files can be re-selected
-  }} 
-/>
-  
-  {/* Selected files ka list preview */}
-  {imageFiles.length > 0 && (
-    <div className="mt-3 p-2 bg-blue-50/50 rounded-lg border border-blue-100">
-      <p className="text-[10px] text-blue-600 font-black uppercase tracking-tighter">
-        ✅ {imageFiles.length} Assets Staged for Upload
-      </p>
-      <div className="flex flex-wrap gap-1 mt-2">
-        {imageFiles.map((file, index) => (
-          <span key={index} className="bg-white text-[8px] px-2 py-1 rounded-md border border-blue-200 text-blue-800 font-bold shadow-sm truncate max-w-[120px]">
-            {file.name}
-          </span>
-        ))}
-      </div>
-    </div>
-  )}
-</div>
+                <div className="relative group">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-yellow-500">
+                    <FaStar size={14} />
+                  </div>
+                  <input
+                    type="number" step="0.1" max="5" min="0"
+                    placeholder="Set Initial Rating (0.0 - 5.0)"
+                    onChange={(e) => setNewProduct({ ...newProduct, averageRating: e.target.value })}
+                    className="w-full bg-yellow-50/50 p-4 pl-10 rounded-xl outline-none font-black text-yellow-700 focus:bg-white border-2 border-dashed border-yellow-200 focus:border-yellow-400 transition-all placeholder:text-yellow-600/50"
+                  />
+                </div>
+                <div className="p-4 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
+                  <p className="text-[9px] font-black uppercase mb-2">Display Gallery (Multiple)</p>
+                  <input
+                    type="file"
+                    multiple
+                    className="text-xs w-full cursor-pointer"
+                    onChange={(e) => {
+                      const selectedFiles = Array.from(e.target.files);
+                      setImageFiles(prev => [...prev, ...selectedFiles]);
+                      e.target.value = null;
+                    }}
+                  />
+                  {imageFiles.length > 0 && (
+                    <div className="mt-3 p-2 bg-blue-50/50 rounded-lg border border-blue-100">
+                      <p className="text-[10px] text-blue-600 font-black uppercase tracking-tighter">
+                        ✅ {imageFiles.length} Assets Staged
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-4">
