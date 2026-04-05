@@ -2,6 +2,10 @@ import React, { useState, useEffect } from "react";
 import { FaEdit, FaTrash, FaPlus, FaSave, FaTimes } from "react-icons/fa";
 
 const ProductAdmin = () => {
+ const BASE_URL = import.meta.env.VITE_API_URL || "https://laptopbackend-eta.vercel.app";
+  const API_URL = `${BASE_URL}/api/products`;
+  
+  console.log("API:", API_URL);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -16,77 +20,91 @@ const ProductAdmin = () => {
     display: "", os: "", features: "", stock: 0,averageRating: 0,
   });
 
-  const API_URL = "http://localhost:5000/api/products";
+
+
   const brands = ["HP", "Dell", "Apple", "Lenovo", "Acer", "Sony", "Samsung"];
   const categories = ["normal", "gaming"];
 
   // --- 1. OPTIMIZED IMAGE RENDERER (Fast & Robust) ---
-  const renderImage = (imageSource) => {
-    const imgObj = Array.isArray(imageSource) ? imageSource[0] : imageSource;
+const renderImage = (imageSource) => {
+  if (!imageSource || imageSource.length === 0) {
+    return "https://via.placeholder.com/150?text=No+Image";
+  }
 
-    if (!imgObj || !imgObj.data) {
-      return "https://via.placeholder.com/150?text=No+Image";
-    }
+  // Agar array hai toh first URL return karo
+  if (Array.isArray(imageSource)) {
+    return imageSource[0].url || imageSource[0]; // Cloudinary URL ya direct string
+  }
 
-    try {
-      // Backend se aane wala buffer data handle karein
-      const bufferData = imgObj.data.data || imgObj.data;
-      
-      // Uint8Array approach is 10x faster for larger images
-      const binary = new Uint8Array(bufferData).reduce(
-        (acc, byte) => acc + String.fromCharCode(byte), 
-        ''
-      );
-      
-      return `data:${imgObj.contentType || 'image/jpeg'};base64,${btoa(binary)}`;
-    } catch (err) {
-      console.error("Render Error:", err);
-      return "https://via.placeholder.com/150?text=Error";
-    }
-  };
+  return imageSource.url || imageSource; // single image object ya URL
+};
+
 
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const url = selectedBrand ? `${API_URL}?brand=${selectedBrand}` : API_URL;
-      const response = await fetch(url);
-      const data = await response.json();
+      const url = selectedBrand
+        ? `${BASE_URL}/api/products?brand=${selectedBrand}`
+        : `${BASE_URL}/api/products`;
+
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      const data = await res.json();
       setProducts(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Fetch error:", err);
+      alert("Failed to fetch products. Check backend URL & CORS.");
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchProducts();
+  }, [selectedBrand]);
+
   useEffect(() => { fetchProducts(); }, [selectedBrand]);
 
   // --- 2. ADD PRODUCT LOGIC ---
-  const handleAddProduct = async (e) => {
+ const handleAddProduct = async (e) => {
     e.preventDefault();
     if (imageFiles.length === 0) return alert("Please select at least one image");
 
     const formData = new FormData();
-    Object.keys(newProduct).forEach(key => formData.append(key, newProduct[key]));
+    Object.keys(newProduct).forEach(key => {
+        let value = newProduct[key];
+        if (["price","stock","averageRating"].includes(key)) {
+            value = Number(value); // cast to number
+        }
+        formData.append(key, value);
+    });
     
     // Append multiple images - Backend expects 'images' field
     imageFiles.forEach(file => formData.append("images", file));
 
     try {
-      const response = await fetch(API_URL, { method: "POST", body: formData });
-      if (response.ok) {
-        setShowAddModal(false);
-        setNewProduct({
-          name: "", brand: "", category: "normal", price: "", 
-          processor: "", ram: "", storage: "", gpu: "", 
-          display: "", os: "", features: "", stock: 0,ratings: 0,
-        });
-        setImageFiles([]);
-        fetchProducts();
-        alert("Unit Deployed Successfully!");
-      }
-    } catch (err) { alert("Add failed"); }
-  };
+        const response = await fetch(API_URL, { method: "POST", body: formData });
+        if (response.ok) {
+            setShowAddModal(false);
+            setNewProduct({
+                name: "", brand: "", category: "normal", price: 0, 
+                processor: "", ram: "", storage: "", gpu: "", 
+                display: "", os: "", features: "", stock: 0, averageRating: 0,
+            });
+            setImageFiles([]);
+            fetchProducts();
+            alert("Unit Deployed Successfully!");
+        } else {
+            const errText = await response.text();
+            console.error("Add Product Error:", errText);
+            alert("Add failed: " + errText);
+        }
+    } catch (err) { 
+        console.error("Add Product Error:", err);
+        alert("Add failed"); 
+    }
+};
 
   // --- 3. ROBUST EDIT LOGIC (Backend Sync) ---
   const handleSaveEdit = async (id) => {
@@ -95,7 +113,11 @@ const ProductAdmin = () => {
     // Clean data: Metadata remove karein taake backend crash na ho
     Object.keys(editFormData).forEach(key => {
       if (!["_id", "__v", "image", "images", "createdAt", "updatedAt", "ratings", "ratings"].includes(key)) {
-        formData.append(key, editFormData[key]);
+     let value = editFormData[key];
+if (["price","stock","averageRating"].includes(key)) {
+  value = Number(value); // cast to number
+}
+formData.append(key, value);
       }
     });
 
@@ -181,8 +203,11 @@ const ProductAdmin = () => {
         <td className="p-6">
           <div className="flex items-center gap-4">
             <div className="relative">
-              <img src={renderImage(p.images || p.image)} alt="" className="w-16 h-12 object-contain rounded-lg border bg-white" />
-              {p.images?.length > 1 && (
+<img 
+  src={renderImage(p.images || p.image)} 
+  alt={p.name} 
+  className="w-16 h-12 object-contain rounded-lg border bg-white" 
+/>              {p.images?.length > 1 && (
                 <span className="absolute -top-2 -right-2 bg-black text-white text-[8px] px-1.5 py-0.5 rounded-full font-black">
                   +{p.images.length - 1}
                 </span>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FaEdit, FaTrash, FaPlus, FaSave, FaTimes, FaStar } from "react-icons/fa";
 
 const FeaturedProductAdmin = () => {
+  const API_URL = `${import.meta.env.VITE_API_URL || "https://laptopbackend-eta.vercel.app"}/api/featured-products`;
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -13,19 +14,20 @@ const FeaturedProductAdmin = () => {
     name: "", price: "", processor: "", ram: "", storage: "", graphics: "", display: "", os: "", features: "", stock: "", averageRating: ""
   });
 
-  const API_URL = "http://localhost:5000/api/featured-products";
+  // const API_URL = "http://localhost:5000/api/featured-products";
 
-  const renderImage = (image) => {
-    const targetImage = Array.isArray(image) ? image[0] : image;
-    if (!targetImage || !targetImage.data || !targetImage.data.data) return "https://via.placeholder.com/150?text=No+Image";
-    try {
-      const binary = targetImage.data.data;
-      let binaryString = "";
-      for (let i = 0; i < binary.length; i++) binaryString += String.fromCharCode(binary[i]);
-      return `data:${targetImage.contentType || 'image/jpeg'};base64,${btoa(binaryString)}`;
-    } catch (err) { return "https://via.placeholder.com/150?text=Error"; }
-  };
+const renderImage = (imageSource) => {
+  if (!imageSource || imageSource.length === 0) {
+    return "https://via.placeholder.com/150?text=No+Image";
+  }
 
+  // Agar array hai toh first URL return karo
+  if (Array.isArray(imageSource)) {
+    return imageSource[0].url || imageSource[0]; // Cloudinary URL ya direct string
+  }
+
+  return imageSource.url || imageSource; // single image object ya URL
+};
   const fetchProducts = async () => {
     setLoading(true);
     try {
@@ -176,8 +178,12 @@ const handleSaveEdit = async (id) => {
                     <td className="p-6">
                       <div className="flex items-center gap-4">
                         <div className="relative">
-                          <img src={renderImage(p.images || p.image)} alt="" className="w-16 h-12 object-contain rounded-lg border bg-white shadow-sm" />
-                          {p.images?.length > 1 && (
+<img 
+  src={renderImage(p.images || p.image)} 
+  alt={p.name} 
+  className="w-16 h-12 object-contain rounded-lg border bg-white" 
+/>   
+               {p.images?.length > 1 && (
                             <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-[8px] px-1.5 py-0.5 rounded-full font-black">+{p.images.length - 1}</span>
                           )}
                         </div>

@@ -5,20 +5,20 @@ const OrderAdmin = () => {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null); // Track editing state
 
-  const API_URL = "http://localhost:5000/api/orders";
-
-  const fetchOrders = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(API_URL);
-      const data = await res.json();
-      setOrders(data);
-    } catch (err) {
-      console.log("Fetch error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+const API_URL = "https://laptopbackend-eta.vercel.app/api/orders";
+const fetchOrders = async () => {
+  setLoading(true);
+  try {
+    const res = await fetch(API_URL);
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const data = await res.json();
+    setOrders(data);
+  } catch (err) {
+    console.log("Fetch error:", err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     fetchOrders();

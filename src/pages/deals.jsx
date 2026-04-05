@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { FaEdit, FaTrash, FaPlus, FaSave, FaTimes, FaTag, FaCloudUploadAlt } from "react-icons/fa";
 
 const DealsAdmin = () => {
+    const API_URL = `${import.meta.env.VITE_API_URL || "https://laptopbackend-eta.vercel.app"}/api/deals`;
+
   const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -17,19 +19,21 @@ const DealsAdmin = () => {
   };
 
   const [newDeal, setNewDeal] = useState(emptyDeal);
-  const API_URL = "http://localhost:5000/api/deals";
+
   const brands = ["HP", "Dell", "Apple", "Lenovo", "Acer", "MSI", "Asus", "Razer"];
 
   const renderImage = (imageSource) => {
-    const imgObj = Array.isArray(imageSource) ? imageSource[0] : imageSource;
-    if (!imgObj || !imgObj.data) return "https://via.placeholder.com/150?text=No+Image";
-    try {
-      const bufferData = imgObj.data.data || imgObj.data;
-      const binary = new Uint8Array(bufferData).reduce((acc, byte) => acc + String.fromCharCode(byte), '');
-      return `data:${imgObj.contentType || 'image/jpeg'};base64,${btoa(binary)}`;
-    } catch (err) { return "https://via.placeholder.com/150?text=Error"; }
-  };
+  if (!imageSource || imageSource.length === 0) {
+    return "https://via.placeholder.com/150?text=No+Image";
+  }
 
+  // Agar array hai toh first URL return karo
+  if (Array.isArray(imageSource)) {
+    return imageSource[0].url || imageSource[0]; // Cloudinary URL ya direct string
+  }
+
+  return imageSource.url || imageSource; // single image object ya URL
+};
   const fetchDeals = async () => {
     setLoading(true);
     try {
@@ -115,8 +119,11 @@ const DealsAdmin = () => {
                   {/* Column 1: Identity */}
                   <td className="p-8">
                     <div className="flex items-center gap-5">
-                      <img src={renderImage(d.images)} className="w-20 h-16 object-contain rounded-xl border bg-white shadow-sm" alt="" />
-                      <div className="flex flex-col gap-1.5">
+<img 
+  src={renderImage(d.images || d.image)} 
+  alt={d.name} 
+  className="w-16 h-12 object-contain rounded-lg border bg-white" 
+/>                      <div className="flex flex-col gap-1.5">
                         {editingId === d._id ? (
                           <>
                             <input className="border border-slate-200 rounded px-2 py-1 font-bold text-xs outline-none focus:border-black" value={editFormData.name} onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })} />
