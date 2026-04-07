@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FaEdit, FaTrash, FaPlus, FaSave, FaTimes, FaTag, FaCloudUploadAlt } from "react-icons/fa";
 
 const DealsAdmin = () => {
-    const API_URL = `${import.meta.env.VITE_API_URL || "https://laptopbackend-eta.vercel.app"}/api/deals`;
+    const API_URL = `${import.meta.env.VITE_API_URL || "https://laptopbackend-orpin.vercel.app"}/api/deals`;
 
   const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);

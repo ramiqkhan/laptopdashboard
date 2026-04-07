@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FaEdit, FaTrash, FaPlus, FaSave, FaTimes, FaStar } from "react-icons/fa";
 
 const FeaturedProductAdmin = () => {
-  const API_URL = `${import.meta.env.VITE_API_URL || "https://laptopbackend-eta.vercel.app"}/api/featured-products`;
+  const API_URL = `${import.meta.env.VITE_API_URL || "https://laptopbackend-orpin.vercel.app"}/api/featured-products`;
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);

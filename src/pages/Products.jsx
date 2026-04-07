@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FaEdit, FaTrash, FaPlus, FaSave, FaTimes } from "react-icons/fa";
 
 const ProductAdmin = () => {
- const BASE_URL = import.meta.env.VITE_API_URL || "https://laptopbackend-eta.vercel.app";
+ const BASE_URL = import.meta.env.VITE_API_URL || "https://laptopbackend-orpin.vercel.app";
   const API_URL = `${BASE_URL}/api/products`;
   
   console.log("API:", API_URL);

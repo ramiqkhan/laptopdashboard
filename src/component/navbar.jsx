@@ -37,7 +37,7 @@ const Navbar = () => {
 
         {/* DESKTOP LINKS */}
         <div className="hidden lg:flex gap-10 items-center">
-          <NavLink to="/" className={activeLink}>Dashboard</NavLink>
+  
           <NavLink to="/Product" className={activeLink}>Products</NavLink>
           <NavLink to="/orders" className={activeLink}>Orders</NavLink>
                     <NavLink to="/featured" onClick={() => setMobileOpen(false)} className={activeLink}>Featured Products</NavLink>
@@ -56,7 +56,7 @@ const Navbar = () => {
       {/* MOBILE MENU */}
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 top-[70px] bg-white z-50 p-8 flex flex-col gap-8 animate-in fade-in slide-in-from-top-4 duration-300">
-          <NavLink to="/" onClick={() => setMobileOpen(false)} className={activeLink}>Dashboard</NavLink>
+
           <NavLink to="/products" onClick={() => setMobileOpen(false)} className={activeLink}>Products</NavLink>
           <NavLink to="/orders" onClick={() => setMobileOpen(false)} className={activeLink}>Orders</NavLink>
           <NavLink to="/featured" onClick={() => setMobileOpen(false)} className={activeLink}>Featured Products</NavLink>
