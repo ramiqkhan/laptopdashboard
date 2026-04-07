@@ -5,7 +5,7 @@ const OrderAdmin = () => {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState(null); // Track editing state
 
-const API_URL = "https://laptopbackend-orpin.vercel.app/api/orders";
+const API_URL = "https://laptopbackend-seven.vercel.app/api/orders";
 const fetchOrders = async () => {
   setLoading(true);
   try {
