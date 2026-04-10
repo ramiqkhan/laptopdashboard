@@ -10,7 +10,7 @@ const LoginPage = () => {
 
   const navigate = useNavigate();
 
-  const VALID_EMAIL = "i";
+  const VALID_EMAIL = "iqratraders@gmail.com";
   const VALID_PASSWORD = "123";
 
   const handleLogin = (e) => {
