@@ -11,54 +11,49 @@ const FeaturedProductAdmin = () => {
   const [imageFiles, setImageFiles] = useState([]);
 
   const [newProduct, setNewProduct] = useState({
-    name: "", price: "", processor: "", ram: "", storage: "", graphics: "", display: "", os: "", features: "", stock: "", averageRating: ""
+    name: "", price: "", processor: "", ram: "", storage: "", graphics: "", display: "", os: "", features: "", stock: "", averageRating: "", description: ""
   });
 
-  // const API_URL = "http://localhost:5000/api/featured-products";
+  const renderImage = (imageSource) => {
+    if (!imageSource || imageSource.length === 0) {
+      return "https://via.placeholder.com/150?text=No+Image";
+    }
+    if (Array.isArray(imageSource)) {
+      return imageSource[0].url || imageSource[0];
+    }
+    return imageSource.url || imageSource;
+  };
 
-const renderImage = (imageSource) => {
-  if (!imageSource || imageSource.length === 0) {
-    return "https://via.placeholder.com/150?text=No+Image";
-  }
-
-  // Agar array hai toh first URL return karo
-  if (Array.isArray(imageSource)) {
-    return imageSource[0].url || imageSource[0]; // Cloudinary URL ya direct string
-  }
-
-  return imageSource.url || imageSource; // single image object ya URL
-};
   const fetchProducts = async () => {
     setLoading(true);
     try {
       const response = await fetch(`${API_URL}/all`);
       const data = await response.json();
       setProducts(Array.isArray(data) ? data : []);
-    } catch (err) { console.error(err); } finally { setLoading(false); }
+    } catch (err) { 
+      console.error(err); 
+    } finally { 
+      setLoading(false); 
+    }
   };
 
-  useEffect(() => { fetchProducts(); }, []);
+  useEffect(() => { 
+    fetchProducts(); 
+  }, []);
 
   const handleAddProduct = async (e) => {
     e.preventDefault();
     const formData = new FormData();
     
     Object.keys(newProduct).forEach(key => {
-   if (key === "averageRating") {
-  let val = newProduct[key];
-
-  if (Array.isArray(val)) {
-    val = val[0];
-  }
-
-  if (val === "" || val === null || val === undefined) {
-    val = 0;
-  }
-
-  const sanitized = parseFloat(val);
-  formData.append("averageRating", isNaN(sanitized) ? 0 : sanitized);
-}else {
-        formData.append(key, newProduct[key]);
+      if (key === "averageRating") {
+        let val = newProduct[key];
+        if (Array.isArray(val)) val = val[0];
+        if (val === "" || val === null || val === undefined) val = 0;
+        const sanitized = parseFloat(val);
+        formData.append("averageRating", isNaN(sanitized) ? 0 : sanitized);
+      } else {
+        formData.append(key, newProduct[key] !== undefined && newProduct[key] !== null ? newProduct[key] : "");
       }
     });
 
@@ -70,78 +65,70 @@ const renderImage = (imageSource) => {
       const res = await fetch(`${API_URL}/add`, { method: "POST", body: formData });
       if (res.ok) {
         setShowAddModal(false);
-        setNewProduct({ name: "", price: "", processor: "", ram: "", storage: "", graphics: "", display: "", os: "", features: "", stock: "", averageRating: "" });
+        setNewProduct({ name: "", price: "", processor: "", ram: "", storage: "", graphics: "", display: "", os: "", features: "", stock: "", averageRating: "", description: "" });
         setImageFiles([]);
         fetchProducts();
-        alert("Featured product added!");
+        alert("Featured product added successfully!");
       }
-    } catch (err) { alert("Add failed"); }
+    } catch (err) { 
+      alert("Add failed"); 
+    }
   };
 
-const handleSaveEdit = async (id) => {
-  const formData = new FormData();
-  const finalData = { ...editFormData };
+  const handleSaveEdit = async (id) => {
+    const formData = new FormData();
+    const finalData = { ...editFormData };
 
-  if (Array.isArray(finalData.features)) {
-    finalData.features = finalData.features.join(", ");
-  }
-
-  Object.keys(finalData).forEach((key) => {
-    if (!["_id", "__v", "image", "images", "createdAt", "updatedAt"].includes(key)) {
-      
-  if (key === "averageRating") {
-  let val = finalData[key];
-
-  // If array comes
-  if (Array.isArray(val)) {
-    val = val[0];
-  }
-
-  // If empty, null, undefined → 0
-  if (val === "" || val === null || val === undefined) {
-    val = 0;
-  }
-
-  const sanitizedRating = parseFloat(val);
-
-  // If still NaN → 0
-  formData.append("averageRating", isNaN(sanitizedRating) ? 0 : sanitizedRating);
-} else {
-        formData.append(key, finalData[key]);
-      }
+    if (Array.isArray(finalData.features)) {
+      finalData.features = finalData.features.join(", ");
     }
-  });
 
-  if (imageFiles.length > 0) {
-    imageFiles.forEach((file) => formData.append("images", file));
-  }
-
-  try {
-    const res = await fetch(`${API_URL}/edit/${id}`, {
-      method: "PUT",
-      body: formData
+    Object.keys(finalData).forEach((key) => {
+      if (!["_id", "__v", "image", "images", "createdAt", "updatedAt"].includes(key)) {
+        if (key === "averageRating") {
+          let val = finalData[key];
+          if (Array.isArray(val)) val = val[0];
+          if (val === "" || val === null || val === undefined) val = 0;
+          const sanitizedRating = parseFloat(val);
+          formData.append("averageRating", isNaN(sanitizedRating) ? 0 : sanitizedRating);
+        } else {
+          formData.append(key, finalData[key] !== undefined && finalData[key] !== null ? finalData[key] : "");
+        }
+      }
     });
 
-    if (res.ok) {
-      setEditingId(null);
-      setImageFiles([]);
-      fetchProducts();
-      alert("Updated Successfully!");
-    } else {
-      const errorData = await res.json();
-      alert(`Update failed: ${errorData.error || "Check console"}`);
+    if (imageFiles.length > 0) {
+      imageFiles.forEach((file) => formData.append("images", file));
     }
-  } catch (err) {
-    alert("Update failed connectivity issue");
-  }
-};
+
+    try {
+      const res = await fetch(`${API_URL}/edit/${id}`, {
+        method: "PUT",
+        body: formData
+      });
+
+      if (res.ok) {
+        setEditingId(null);
+        setImageFiles([]);
+        fetchProducts();
+        alert("Updated Successfully!");
+      } else {
+        const errorData = await res.json();
+        alert(`Update failed: ${errorData.error || "Check console"}`);
+      }
+    } catch (err) {
+      alert("Update failed connectivity issue");
+    }
+  };
 
   const handleDelete = async (id) => {
     if (window.confirm("Delete this featured unit?")) {
       try {
         const res = await fetch(`${API_URL}/delete/${id}`, { method: "DELETE" });
         if (res.ok) fetchProducts();
-      } catch (err) { alert("Delete failed"); }
+      } catch (err) { 
+        alert("Delete failed"); 
+      }
     }
   };
 
@@ -164,7 +151,7 @@ const handleSaveEdit = async (id) => {
               <tr className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
                 <th className="p-6">Unit Image & Model</th>
                 <th className="p-6">Performance Specs</th>
-                <th className="p-6">Inventory Status</th>
+                <th className="p-6">Inventory Status & Description</th>
                 <th className="p-6">Price</th>
                 <th className="p-6 text-right">Actions</th>
               </tr>
@@ -178,18 +165,18 @@ const handleSaveEdit = async (id) => {
                     <td className="p-6">
                       <div className="flex items-center gap-4">
                         <div className="relative">
-<img 
-  src={renderImage(p.images || p.image)} 
-  alt={p.name} 
-  className="w-16 h-12 object-contain rounded-lg border bg-white" 
-/>   
-               {p.images?.length > 1 && (
+                          <img 
+                            src={renderImage(p.images || p.image)} 
+                            alt={p.name} 
+                            className="w-16 h-12 object-contain rounded-lg border bg-white" 
+                          />   
+                          {p.images?.length > 1 && (
                             <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-[8px] px-1.5 py-0.5 rounded-full font-black">+{p.images.length - 1}</span>
                           )}
                         </div>
                         <div className="flex flex-col">
                           {editingId === p._id ? (
-                            <input className="border-b font-bold mb-1 outline-none focus:border-black p-1" value={editFormData.name || ""} onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })} />
+                            <input className="border-b font-bold mb-1 outline-none focus:border-black p-1 text-xs" value={editFormData.name || ""} onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })} />
                           ) : (
                             <span className="font-bold text-slate-800">{p.name}</span>
                           )}
@@ -218,37 +205,39 @@ const handleSaveEdit = async (id) => {
                       )}
                     </td>
 
-                    <td className="p-6">
+                    <td className="p-6 max-w-[300px]">
                       {editingId === p._id ? (
                         <div className="flex flex-col gap-1">
                           <input className="border-b text-xs outline-none p-1" value={editFormData.stock || ""} onChange={(e) => setEditFormData({ ...editFormData, stock: e.target.value })} placeholder="Stock" />
                           <input className="border-b text-xs outline-none p-1" value={editFormData.graphics || ""} onChange={(e) => setEditFormData({ ...editFormData, graphics: e.target.value })} placeholder="GPU" />
-                          <div className="flex items-center gap-1 bg-yellow-50 p-1 rounded border border-yellow-100">
+                          {/* Exact mapping as main products logic */}
+                          <textarea className="border rounded text-xs outline-none p-2 mt-1 resize-y h-14 w-full bg-gray-50 focus:bg-white focus:border-black transition-colors" value={editFormData.description || ""} onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })} placeholder="Edit Asset Description" />
+                          <div className="flex items-center gap-1 bg-yellow-50 p-1 rounded border border-yellow-100 mt-1">
                             <span className="text-yellow-600 text-[10px] font-black">★</span>
-                        <input
-  type="number" step="0.1" max="5" min="0"
-  className="bg-transparent text-[10px] font-black text-yellow-700 outline-none w-full"
-  // FIX: Agar value 0 hai to khali string dikhao taake placeholder nazar aaye
-  value={editFormData.averageRating === 0 ? "" : editFormData.averageRating}
-  onChange={(e) => setEditFormData({ ...editFormData, averageRating: e.target.value })}
-  placeholder="Rating"
-/>
+                            <input
+                              type="number" step="0.1" max="5" min="0"
+                              className="bg-transparent text-[10px] font-black text-yellow-700 outline-none w-full"
+                              value={editFormData.averageRating === 0 ? "" : editFormData.averageRating}
+                              onChange={(e) => setEditFormData({ ...editFormData, averageRating: e.target.value })}
+                              placeholder="Rating"
+                            />
                           </div>
                         </div>
                       ) : (
-                        <div className="flex flex-col">
+                        <div className="flex flex-col gap-1">
                           <span className={`${p.stock > 0 ? 'text-green-600' : 'text-red-600'} font-bold text-[11px] uppercase tracking-tighter`}>
                             {p.stock > 0 ? `${p.stock} Units In Stock` : 'Out Of Stock'}
                           </span>
                           <span className="text-[11px] text-blue-500 font-bold uppercase">{p.graphics}</span>
                           <div className="flex items-center gap-1.5">
-                            <div className="flex text-yellow-400 text-[10px]">
-                              <FaStar />
-                            </div>
+                            <div className="flex text-yellow-400 text-[10px]"><FaStar /></div>
                             <span className="text-[11px] font-black text-slate-800 tracking-tight">
                               { p.averageRating || "0.0"} <span className="text-gray-400 font-normal">/ 5.0</span>
                             </span>
                           </div>
+                          {p.description && (
+                            <p className="text-[11px] text-gray-500 line-clamp-2 mt-1.5 italic bg-gray-50 p-1.5 rounded border border-gray-100/50 break-words">{p.description}</p>
+                          )}
                         </div>
                       )}
                     </td>
@@ -269,7 +258,8 @@ const handleSaveEdit = async (id) => {
                         </div>
                       ) : (
                         <div className="flex gap-2 justify-end">
-                          <button onClick={() => { setEditingId(p._id); setEditFormData({ ...p, averageRating: p.ratings || 0 }); setImageFiles([]); }} className="p-2 hover:bg-slate-100 text-slate-600 rounded-lg transition-colors"><FaEdit size={12} /></button>
+                          {/* FIXED: Spread product explicitly to avoid state structural breakdown */}
+                          <button onClick={() => { setEditingId(p._id); setEditFormData({ ...p, description: p.description || "" }); setImageFiles([]); }} className="p-2 hover:bg-slate-100 text-slate-600 rounded-lg transition-colors"><FaEdit size={12} /></button>
                           <button onClick={() => handleDelete(p._id)} className="p-2 hover:bg-red-50 text-red-500 rounded-lg transition-colors"><FaTrash size={12} /></button>
                         </div>
                       )}
@@ -293,18 +283,17 @@ const handleSaveEdit = async (id) => {
             <form onSubmit={handleAddProduct} className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
               <div className="space-y-4">
                 <p className="text-[10px] font-black uppercase text-blue-600 tracking-widest border-l-4 border-blue-600 pl-2">Asset Details</p>
-                <input placeholder="Model Name" onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })} required className="w-full bg-gray-50 p-4 rounded-xl outline-none font-bold focus:bg-white border-transparent focus:border-black border transition-all" />
+                <input placeholder="Model Name" value={newProduct.name} onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })} required className="w-full bg-gray-50 p-4 rounded-xl outline-none font-bold focus:bg-white border-transparent focus:border-black border transition-all" />
                 <div className="grid grid-cols-2 gap-4">
-                  <input type="number" placeholder="Price (PKR)" onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold border-transparent focus:border-black border transition-all" />
-                  <input type="number" placeholder="Stock Quantity" onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold border-transparent focus:border-black border transition-all" />
+                  <input type="number" placeholder="Price (PKR)" value={newProduct.price} onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold border-transparent focus:border-black border transition-all" />
+                  <input type="number" placeholder="Stock Quantity" value={newProduct.stock} onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold border-transparent focus:border-black border transition-all" />
                 </div>
                 <div className="relative group">
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-yellow-500">
-                    <FaStar size={14} />
-                  </div>
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-yellow-500"><FaStar size={14} /></div>
                   <input
                     type="number" step="0.1" max="5" min="0"
                     placeholder="Set Initial Rating (0.0 - 5.0)"
+                    value={newProduct.averageRating}
                     onChange={(e) => setNewProduct({ ...newProduct, averageRating: e.target.value })}
                     className="w-full bg-yellow-50/50 p-4 pl-10 rounded-xl outline-none font-black text-yellow-700 focus:bg-white border-2 border-dashed border-yellow-200 focus:border-yellow-400 transition-all placeholder:text-yellow-600/50"
                   />
@@ -323,26 +312,31 @@ const handleSaveEdit = async (id) => {
                   />
                   {imageFiles.length > 0 && (
                     <div className="mt-3 p-2 bg-blue-50/50 rounded-lg border border-blue-100">
-                      <p className="text-[10px] text-blue-600 font-black uppercase tracking-tighter">
-                        ✅ {imageFiles.length} Assets Staged
-                      </p>
+                      <p className="text-[10px] text-blue-600 font-black uppercase tracking-tighter">✅ {imageFiles.length} Assets Staged</p>
                     </div>
                   )}
                 </div>
               </div>
 
               <div className="space-y-4">
-                <p className="text-[10px] font-black uppercase text-purple-600 tracking-widest border-l-4 border-purple-600 pl-2">Specifications</p>
-                <input placeholder="Processor" onChange={(e) => setNewProduct({ ...newProduct, processor: e.target.value })} required className="w-full bg-gray-50 p-4 rounded-xl outline-none font-bold focus:bg-white border-transparent focus:border-black border" />
+                <p className="text-[10px] font-black uppercase text-purple-600 tracking-widest border-l-4 border-purple-600 pl-2">Specifications & Details</p>
+                <input placeholder="Processor" value={newProduct.processor} onChange={(e) => setNewProduct({ ...newProduct, processor: e.target.value })} required className="w-full bg-gray-50 p-4 rounded-xl outline-none font-bold focus:bg-white border-transparent focus:border-black border" />
                 <div className="grid grid-cols-2 gap-4">
-                  <input placeholder="RAM" onChange={(e) => setNewProduct({ ...newProduct, ram: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold focus:bg-white border-transparent focus:border-black border" />
-                  <input placeholder="Storage" onChange={(e) => setNewProduct({ ...newProduct, storage: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold focus:bg-white border-transparent focus:border-black border" />
+                  <input placeholder="RAM" value={newProduct.ram} onChange={(e) => setNewProduct({ ...newProduct, ram: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold focus:bg-white border-transparent focus:border-black border" />
+                  <input placeholder="Storage" value={newProduct.storage} onChange={(e) => setNewProduct({ ...newProduct, storage: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold focus:bg-white border-transparent focus:border-black border" />
                 </div>
-                <input placeholder="Graphics Card" onChange={(e) => setNewProduct({ ...newProduct, graphics: e.target.value })} required className="w-full bg-gray-50 p-4 rounded-xl outline-none font-bold focus:bg-white border-transparent focus:border-black border" />
+                <input placeholder="Graphics Card" value={newProduct.graphics} onChange={(e) => setNewProduct({ ...newProduct, graphics: e.target.value })} required className="w-full bg-gray-50 p-4 rounded-xl outline-none font-bold focus:bg-white border-transparent focus:border-black border" />
                 <div className="grid grid-cols-2 gap-4">
-                  <input placeholder="Display" onChange={(e) => setNewProduct({ ...newProduct, display: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold focus:bg-white border-transparent focus:border-black border" />
-                  <input placeholder="OS" onChange={(e) => setNewProduct({ ...newProduct, os: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold focus:bg-white border-transparent focus:border-black border" />
+                  <input placeholder="Display" value={newProduct.display} onChange={(e) => setNewProduct({ ...newProduct, display: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold focus:bg-white border-transparent focus:border-black border" />
+                  <input placeholder="OS" value={newProduct.os} onChange={(e) => setNewProduct({ ...newProduct, os: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold focus:bg-white border-transparent focus:border-black border" />
                 </div>
+                
+                <textarea 
+                  placeholder="Detailed Description (e.g. Generation, Body Condition, Warranty Status...)" 
+                  value={newProduct.description} 
+                  onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })} 
+                  className="w-full bg-gray-50 p-4 rounded-xl outline-none font-medium focus:bg-white border-transparent focus:border-black border min-h-[110px] resize-y placeholder:text-gray-400"
+                />
               </div>
 
               <button type="submit" className="col-span-1 md:col-span-2 bg-black text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-slate-800 transition-all shadow-xl active:scale-95">

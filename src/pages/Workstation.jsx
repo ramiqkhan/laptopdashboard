@@ -12,9 +12,10 @@ const WorkstationAdmin = () => {
   const [editFormData, setEditFormData] = useState({});
   const [imageFiles, setImageFiles] = useState([]);
 
+  // 1. Initialized description key inside state blueprint
   const [newProduct, setNewProduct] = useState({
     name: "", price: "", processor: "", ram: "", storage: "", 
-    graphics: "", display: "", os: "", features: "", stock: "", averageRating: ""
+    graphics: "", display: "", os: "", features: "", stock: "", averageRating: "", description: ""
   });
 
   const renderImage = (imageSource) => {
@@ -49,7 +50,6 @@ const WorkstationAdmin = () => {
     Object.keys(newProduct).forEach(key => {
       let val = newProduct[key];
       
-      // Strict Rating/Numeric Sanitization to match your working Featured logic
       if (key === "averageRating") {
         if (Array.isArray(val)) val = val[0];
         if (val === "" || val === null || val === undefined) val = 0;
@@ -58,7 +58,7 @@ const WorkstationAdmin = () => {
       } else if (key === "price" || key === "stock") {
         formData.append(key, parseFloat(val) || 0);
       } else {
-        formData.append(key, val);
+        formData.append(key, val !== undefined && val !== null ? val : "");
       }
     });
 
@@ -72,7 +72,7 @@ const WorkstationAdmin = () => {
         setShowAddModal(false);
         setNewProduct({
           name: "", price: "", processor: "", ram: "", storage: "", 
-          graphics: "", display: "", os: "", features: "", stock: "", averageRating: ""
+          graphics: "", display: "", os: "", features: "", stock: "", averageRating: "", description: ""
         });
         setImageFiles([]);
         fetchProducts();
@@ -96,7 +96,7 @@ const WorkstationAdmin = () => {
           const sanitizedRating = parseFloat(val || 0);
           formData.append("averageRating", isNaN(sanitizedRating) ? 0 : sanitizedRating);
         } else {
-          formData.append(key, finalData[key]);
+          formData.append(key, finalData[key] !== undefined && finalData[key] !== null ? finalData[key] : "");
         }
       }
     });
@@ -144,7 +144,7 @@ const WorkstationAdmin = () => {
               <tr className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
                 <th className="p-6">Machine Image & Model</th>
                 <th className="p-6">Processing Power</th>
-                <th className="p-6">Availability</th>
+                <th className="p-6">Availability & Description</th>
                 <th className="p-6">Price</th>
                 <th className="p-6 text-right">Actions</th>
               </tr>
@@ -165,7 +165,7 @@ const WorkstationAdmin = () => {
                         </div>
                         <div className="flex flex-col">
                           {editingId === p._id ? (
-                            <input className="border-b font-bold mb-1 outline-none focus:border-black p-1" value={editFormData.name || ""} onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })} />
+                            <input className="border-b font-bold mb-1 outline-none focus:border-black p-1 text-xs" value={editFormData.name || ""} onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })} />
                           ) : (
                             <span className="font-bold text-slate-800">{p.name}</span>
                           )}
@@ -179,22 +179,33 @@ const WorkstationAdmin = () => {
                           <input className="border-b text-xs outline-none p-1" value={editFormData.processor || ""} onChange={(e) => setEditFormData({ ...editFormData, processor: e.target.value })} placeholder="CPU" />
                           <input className="border-b text-xs outline-none p-1" value={editFormData.ram || ""} onChange={(e) => setEditFormData({ ...editFormData, ram: e.target.value })} placeholder="RAM" />
                           <input className="border-b text-xs outline-none p-1" value={editFormData.storage || ""} onChange={(e) => setEditFormData({ ...editFormData, storage: e.target.value })} placeholder="Storage" />
+                          <input className="border-b text-xs outline-none p-1" value={editFormData.graphics || ""} onChange={(e) => setEditFormData({ ...editFormData, graphics: e.target.value })} placeholder="GPU" />
                         </div>
                       ) : (
                         <div className="flex flex-col">
                           <span className="font-semibold text-gray-700">{p.processor}</span>
                           <span className="text-[11px] text-gray-400 uppercase font-bold">{p.ram} | {p.storage}</span>
+                          <span className="text-[11px] text-purple-600 font-medium mt-0.5">{p.graphics}</span>
                         </div>
                       )}
                     </td>
 
-                    <td className="p-6">
+                    <td className="p-6 max-w-[320px]">
                       {editingId === p._id ? (
-                        <input className="border-b text-xs outline-none p-1" value={editFormData.stock || ""} onChange={(e) => setEditFormData({ ...editFormData, stock: e.target.value })} placeholder="Stock" />
+                        <div className="flex flex-col gap-1">
+                          <input className="border-b text-xs outline-none p-1" value={editFormData.stock || ""} onChange={(e) => setEditFormData({ ...editFormData, stock: e.target.value })} placeholder="Stock" />
+                          {/* Inline Description Editor mapped exactly with your system standard */}
+                          <textarea className="border rounded text-xs outline-none p-2 mt-2 resize-y h-14 w-full bg-gray-50 focus:bg-white focus:border-black transition-colors" value={editFormData.description || ""} onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })} placeholder="Edit Machine Description" />
+                        </div>
                       ) : (
-                        <span className={`${p.stock > 0 ? 'text-green-600' : 'text-red-600'} font-bold text-[11px] uppercase tracking-tighter`}>
-                          {p.stock > 0 ? `${p.stock} Units Available` : 'Out Of Stock'}
-                        </span>
+                        <div className="flex flex-col gap-1">
+                          <span className={`${p.stock > 0 ? 'text-green-600' : 'text-red-600'} font-bold text-[11px] uppercase tracking-tighter`}>
+                            {p.stock > 0 ? `${p.stock} Units Available` : 'Out Of Stock'}
+                          </span>
+                          {p.description && (
+                            <p className="text-[11px] text-gray-500 line-clamp-2 mt-1.5 italic bg-gray-50 p-1.5 rounded border border-gray-100/50 break-words">{p.description}</p>
+                          )}
+                        </div>
                       )}
                     </td>
 
@@ -209,13 +220,13 @@ const WorkstationAdmin = () => {
                     <td className="p-6 text-right">
                       {editingId === p._id ? (
                         <div className="flex gap-2 justify-end">
-                          <button onClick={() => handleSaveEdit(p._id)} className="p-2 bg-black text-white rounded-lg"><FaSave size={12} /></button>
-                          <button onClick={() => setEditingId(null)} className="p-2 bg-gray-200 text-gray-600 rounded-lg"><FaTimes size={12} /></button>
+                          <button onClick={() => handleSaveEdit(p._id)} className="p-2 bg-black text-white rounded-lg hover:scale-105 transition-transform"><FaSave size={12} /></button>
+                          <button onClick={() => { setEditingId(null); setImageFiles([]); }} className="p-2 bg-gray-200 text-gray-600 rounded-lg"><FaTimes size={12} /></button>
                         </div>
                       ) : (
                         <div className="flex gap-2 justify-end">
-                          <button onClick={() => { setEditingId(p._id); setEditFormData(p); }} className="p-2 hover:bg-slate-100 text-slate-600 rounded-lg"><FaEdit size={12} /></button>
-                          <button onClick={() => handleDelete(p._id)} className="p-2 hover:bg-red-50 text-red-500 rounded-lg"><FaTrash size={12} /></button>
+                          <button onClick={() => { setEditingId(p._id); setEditFormData({ ...p, description: p.description || "" }); setImageFiles([]); }} className="p-2 hover:bg-slate-100 text-slate-600 rounded-lg transition-colors"><FaEdit size={12} /></button>
+                          <button onClick={() => handleDelete(p._id)} className="p-2 hover:bg-red-50 text-red-500 rounded-lg transition-colors"><FaTrash size={12} /></button>
                         </div>
                       )}
                     </td>
@@ -230,38 +241,38 @@ const WorkstationAdmin = () => {
       {/* Reusable Add Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-          <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-[2.5rem] p-8 w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl">
             <div className="flex justify-between items-center mb-8 border-b pb-4">
               <h2 className="text-3xl font-black uppercase tracking-tighter italic">New Workstation Entry</h2>
-              <button onClick={() => setShowAddModal(false)}><FaTimes size={24} /></button>
+              <button onClick={() => setShowAddModal(false)} className="text-gray-400 hover:text-black transition-colors"><FaTimes size={24} /></button>
             </div>
             
-            <form onSubmit={handleAddProduct} className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <form onSubmit={handleAddProduct} className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
               <div className="space-y-4">
                 <p className="text-[10px] font-black uppercase text-blue-600 tracking-widest border-l-4 border-blue-600 pl-2">Machine Info</p>
-                <input placeholder="Model Name" value={newProduct.name} onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })} required className="w-full bg-gray-50 p-4 rounded-xl outline-none font-bold border" />
+                <input placeholder="Model Name" value={newProduct.name} onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })} required className="w-full bg-gray-50 p-4 rounded-xl outline-none font-bold border-transparent focus:border-black border transition-all" />
                 <div className="grid grid-cols-2 gap-4">
-                  <input type="number" placeholder="Price (PKR)" value={newProduct.price} onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold border" />
-                  <input type="number" placeholder="Stock" value={newProduct.stock} onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold border" />
+                  <input type="number" placeholder="Price (PKR)" value={newProduct.price} onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold border-transparent focus:border-black border transition-all" />
+                  <input type="number" placeholder="Stock" value={newProduct.stock} onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold border-transparent focus:border-black border transition-all" />
                 </div>
-                <input placeholder="Features (comma separated)" value={newProduct.features} onChange={(e) => setNewProduct({ ...newProduct, features: e.target.value })} className="w-full bg-gray-50 p-4 rounded-xl outline-none border" />
-                <div className="p-4 bg-gray-50 rounded-xl border-2 border-dashed">
+                <input placeholder="Features (comma separated)" value={newProduct.features} onChange={(e) => setNewProduct({ ...newProduct, features: e.target.value })} className="w-full bg-gray-50 p-4 rounded-xl outline-none border-transparent focus:border-black border transition-all" />
+                <div className="p-4 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
                   <p className="text-[9px] font-black uppercase mb-2">Upload Images</p>
-                  <input type="file" multiple onChange={(e) => setImageFiles(Array.from(e.target.files))} className="text-xs" />
+                  <input type="file" multiple onChange={(e) => setImageFiles(Array.from(e.target.files))} className="text-xs w-full cursor-pointer" />
                 </div>
               </div>
 
               <div className="space-y-4">
                 <p className="text-[10px] font-black uppercase text-purple-600 tracking-widest border-l-4 border-purple-600 pl-2">Hardware Specs</p>
-                <input placeholder="Processor" value={newProduct.processor} onChange={(e) => setNewProduct({ ...newProduct, processor: e.target.value })} required className="w-full bg-gray-50 p-4 rounded-xl outline-none font-bold border" />
+                <input placeholder="Processor" value={newProduct.processor} onChange={(e) => setNewProduct({ ...newProduct, processor: e.target.value })} required className="w-full bg-gray-50 p-4 rounded-xl outline-none font-bold border-transparent focus:border-black border" />
                 <div className="grid grid-cols-2 gap-4">
-                  <input placeholder="RAM" value={newProduct.ram} onChange={(e) => setNewProduct({ ...newProduct, ram: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold border" />
-                  <input placeholder="Storage" value={newProduct.storage} onChange={(e) => setNewProduct({ ...newProduct, storage: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold border" />
+                  <input placeholder="RAM" value={newProduct.ram} onChange={(e) => setNewProduct({ ...newProduct, ram: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold border-transparent focus:border-black border" />
+                  <input placeholder="Storage" value={newProduct.storage} onChange={(e) => setNewProduct({ ...newProduct, storage: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold border-transparent focus:border-black border" />
                 </div>
-                <input placeholder="Graphics Card" value={newProduct.graphics} onChange={(e) => setNewProduct({ ...newProduct, graphics: e.target.value })} required className="w-full bg-gray-50 p-4 rounded-xl outline-none font-bold border" />
+                <input placeholder="Graphics Card" value={newProduct.graphics} onChange={(e) => setNewProduct({ ...newProduct, graphics: e.target.value })} required className="w-full bg-gray-50 p-4 rounded-xl outline-none font-bold border-transparent focus:border-black border" />
                 <div className="grid grid-cols-2 gap-4">
-                  <input placeholder="Display" value={newProduct.display} onChange={(e) => setNewProduct({ ...newProduct, display: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold border" />
-                  <input placeholder="OS" value={newProduct.os} onChange={(e) => setNewProduct({ ...newProduct, os: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold border" />
+                  <input placeholder="Display" value={newProduct.display} onChange={(e) => setNewProduct({ ...newProduct, display: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold border-transparent focus:border-black border" />
+                  <input placeholder="OS" value={newProduct.os} onChange={(e) => setNewProduct({ ...newProduct, os: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold border-transparent focus:border-black border" />
                 </div>
                 <div className="flex items-center gap-4 bg-yellow-50 p-4 rounded-xl border border-yellow-100">
                   <FaStar className="text-yellow-500" />
@@ -269,7 +280,18 @@ const WorkstationAdmin = () => {
                 </div>
               </div>
 
-              <button type="submit" className="col-span-1 md:col-span-2 bg-black text-white py-5 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-800 transition-all">
+              {/* Added Dedicated Description Textarea Box */}
+              <div className="col-span-1 md:col-span-2 flex flex-col gap-2">
+                <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest border-l-4 border-slate-500 pl-2">Machine Description</p>
+                <textarea 
+                  placeholder="Enter detailed description regarding the machine configuration, architecture, usage details, or build variant..." 
+                  value={newProduct.description} 
+                  onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })} 
+                  className="w-full bg-gray-50 p-4 rounded-xl outline-none font-medium focus:bg-white border-transparent focus:border-black border min-h-[110px] resize-y placeholder:text-gray-400 text-sm transition-all"
+                />
+              </div>
+
+              <button type="submit" className="col-span-1 md:col-span-2 bg-black text-white py-5 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-800 transition-all shadow-xl active:scale-95">
                 Deploy Workstation
               </button>
             </form>

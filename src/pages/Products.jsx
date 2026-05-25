@@ -17,7 +17,7 @@ const ProductAdmin = () => {
   const [newProduct, setNewProduct] = useState({
     name: "", brand: "", category: "normal", price: "", 
     processor: "", ram: "", storage: "", gpu: "", 
-    display: "", os: "", features: "", stock: 0,averageRating: 0,
+    display: "", os: "", features: "", stock: 0,averageRating: 0,description: "",
   });
 
 
@@ -90,7 +90,7 @@ const renderImage = (imageSource) => {
             setNewProduct({
                 name: "", brand: "", category: "normal", price: 0, 
                 processor: "", ram: "", storage: "", gpu: "", 
-                display: "", os: "", features: "", stock: 0, averageRating: 0,
+                display: "", os: "", features: "", stock: 0, averageRating: 0,description: "",
             });
             setImageFiles([]);
             fetchProducts();
@@ -256,6 +256,7 @@ formData.append(key, value);
               {p.category}
             </span>
           )}
+          
         </td>
 
         {/* 3. Core Specs (Processor, RAM, Storage) */}
@@ -294,37 +295,50 @@ formData.append(key, value);
         </td>
 
         {/* 4. GPU, OS & Display */}
-        <td className="p-6">
-          {editingId === p._id ? (
-            <div className="flex flex-col gap-1">
-              <input 
-                className="border-b text-xs outline-none" 
-                value={editFormData.gpu} 
-                onChange={(e) => setEditFormData({ ...editFormData, gpu: e.target.value })} 
-                placeholder="GPU"
-              />
-              <div className="flex gap-1">
-                <input 
-                  className="border-b text-[10px] w-1/2 outline-none" 
-                  value={editFormData.os} 
-                  onChange={(e) => setEditFormData({ ...editFormData, os: e.target.value })} 
-                  placeholder="OS"
-                />
-                <input 
-                  className="border-b text-[10px] w-1/2 outline-none" 
-                  value={editFormData.display} 
-                  onChange={(e) => setEditFormData({ ...editFormData, display: e.target.value })} 
-                  placeholder="Display"
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col">
-              <span className="text-gray-600">{p.gpu}</span>
-              <span className="text-[10px] text-gray-400 font-bold uppercase">{p.os} | {p.display}</span>
-            </div>
-          )}
-        </td>
+        {/* 4. GPU, OS & Display */}
+<td className="p-6">
+  {editingId === p._id ? (
+    <div className="flex flex-col gap-1">
+      <input 
+        className="border-b text-xs outline-none" 
+        value={editFormData.gpu || ""} 
+        onChange={(e) => setEditFormData({ ...editFormData, gpu: e.target.value })} 
+        placeholder="GPU"
+      />
+      <div className="flex gap-1">
+        <input 
+          className="border-b text-[10px] w-1/2 outline-none" 
+          value={editFormData.os || ""} 
+          onChange={(e) => setEditFormData({ ...editFormData, os: e.target.value })} 
+          placeholder="OS"
+        />
+        <input 
+          className="border-b text-[10px] w-1/2 outline-none" 
+          value={editFormData.display || ""} 
+          onChange={(e) => setEditFormData({ ...editFormData, display: e.target.value })} 
+          placeholder="Display"
+        />
+      </div>
+      {/* Description Input for Inline Edit */}
+      <textarea 
+  className="w-full bg-gray-50 p-4 rounded-xl outline-none font-bold" rows="2"
+          value={editFormData.description || ""} 
+        onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })} 
+        placeholder="Description"
+      />
+    </div>
+  ) : (
+    <div className="flex flex-col">
+      <span className="text-gray-600">{p.gpu}</span>
+      <span className="text-[10px] text-gray-400 font-bold uppercase">{p.os} | {p.display}</span>
+      {p.description && (
+        <span className="text-[10px] text-slate-400 italic line-clamp-1 mt-0.5" title={p.description}>
+          {p.description}
+        </span>
+      )}
+    </div>
+  )}
+</td>
 
         {/* 5. Inventory (Price & Stock) */}
         <td className="p-6">
@@ -478,6 +492,12 @@ formData.append(key, value);
                 <input placeholder="Operating System" onChange={(e) => setNewProduct({ ...newProduct, os: e.target.value })} required className="w-full bg-gray-50 p-4 rounded-xl outline-none font-bold" />
 
                 <textarea placeholder="Key Features" onChange={(e) => setNewProduct({ ...newProduct, features: e.target.value })} className="w-full bg-gray-50 p-4 rounded-xl outline-none font-bold" rows="2" />
+              <textarea 
+    placeholder="Product Description" 
+    value={newProduct.description}
+    onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })} 
+    className="w-full bg-gray-50 p-4 rounded-xl outline-none font-bold" rows="2"
+  />
               </div>
 
               <button type="submit" className="col-span-2 bg-black text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-slate-800 transition-all shadow-xl active:scale-95">
