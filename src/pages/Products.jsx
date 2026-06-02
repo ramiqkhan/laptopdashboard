@@ -13,7 +13,7 @@ const ProductAdmin = () => {
   const [editFormData, setEditFormData] = useState({});
   const [selectedBrand, setSelectedBrand] = useState("");
   const [imageFiles, setImageFiles] = useState([]);
-
+const [selectedCategory, setSelectedCategory] = useState("");
   const [newProduct, setNewProduct] = useState({
     name: "", brand: "", category: "normal", price: "", 
     processor: "", ram: "", storage: "", gpu: "", 
@@ -23,7 +23,7 @@ const ProductAdmin = () => {
 
 
   const brands = ["HP", "Dell", "Apple", "Lenovo", "Acer", "Sony", "Samsung"];
-  const categories = ["normal", "gaming"];
+  const categories = ["normal", "gaming","workstation","newproduct"];
 
   // --- 1. OPTIMIZED IMAGE RENDERER (Fast & Robust) ---
 const renderImage = (imageSource) => {
@@ -40,12 +40,26 @@ const renderImage = (imageSource) => {
 };
 
 
-  const fetchProducts = async () => {
+const fetchProducts = async () => {
     setLoading(true);
     try {
-      const url = selectedBrand
-        ? `${BASE_URL}/api/products?brand=${selectedBrand}`
+      // 1. URLSearchParams ka use karein taake dynamic query string ban sake
+      const params = new URLSearchParams();
+      
+      if (selectedBrand) {
+        params.append("brand", selectedBrand);
+      }
+      if (selectedCategory) {
+        params.append("category", selectedCategory);
+      }
+
+      // 2. Agar koi parameter hai toh append karein, nahi toh simple base URL
+      const queryString = params.toString();
+      const url = queryString 
+        ? `${BASE_URL}/api/products?${queryString}`
         : `${BASE_URL}/api/products`;
+
+      console.log("Fetching from URL:", url); // Debugging ke liye
 
       const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -60,11 +74,10 @@ const renderImage = (imageSource) => {
     }
   };
 
-  useEffect(() => {
-    fetchProducts();
-  }, [selectedBrand]);
 
-  useEffect(() => { fetchProducts(); }, [selectedBrand]);
+useEffect(() => {
+  fetchProducts();
+}, [selectedBrand, selectedCategory]);
 
   // --- 2. ADD PRODUCT LOGIC ---
  const handleAddProduct = async (e) => {
@@ -169,6 +182,20 @@ formData.append(key, value);
               <option value="">Filter Brand</option>
               {brands.map(b => <option key={b} value={b}>{b}</option>)}
             </select>
+            {/* ✨ ADDED: Category Filter Dropdown */}
+ {/* ✨ ADDED: Category Filter Dropdown */}
+<select 
+  className="bg-gray-100 rounded-xl px-4 py-2 text-[10px] font-bold uppercase outline-none border-2 border-transparent focus:border-black transition-all" 
+  onChange={(e) => setSelectedCategory(e.target.value)}
+  value={selectedCategory}
+>
+  <option value="">Filter Category</option>
+  {/* values unique lowecase lowercase honi chahiye */}
+  <option value="normal">NORMAL</option>
+  <option value="gaming">GAMING</option>
+  <option value="workstation">WORKSTATION</option>
+  <option value="newproduct">NEW PRODUCT</option>
+</select>
             <button onClick={() => setShowAddModal(true)} className="bg-black text-white px-8 py-4 rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-lg hover:bg-slate-800 active:scale-95 transition-all">
               <FaPlus className="inline mr-2" /> Add Laptop
             </button>
@@ -242,22 +269,26 @@ formData.append(key, value);
         </td>
 
         {/* 2. Category */}
-        <td className="p-6">
-          {editingId === p._id ? (
-            <select 
-              className="border rounded text-xs p-1" 
-              value={editFormData.category} 
-              onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value })}
-            >
-              {categories.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-          ) : (
-            <span className={`text-[9px] font-black uppercase px-3 py-1 rounded-full ${p.category === "gaming" ? "bg-purple-100 text-purple-600" : "bg-blue-100 text-blue-600"}`}>
-              {p.category}
-            </span>
-          )}
-          
-        </td>
+      <td className="p-6">
+                      {editingId === p._id ? (
+                        <select 
+                          className="border rounded text-xs p-1 font-bold uppercase" 
+                          value={editFormData.category} 
+                          onChange={(e) => setEditFormData({ ...editFormData, category: e.target.value })}
+                        >
+                          {categories.map((c) => <option key={c} value={c}>{c.toUpperCase()}</option>)}
+                        </select>
+                      ) : (
+                        <span className={`text-[9px] font-black uppercase px-3 py-1 rounded-full ${
+                          p.category === "gaming" ? "bg-purple-100 text-purple-600" : 
+                          p.category === "workstation" ? "bg-amber-100 text-amber-600" : 
+                          p.category === "newproduct" ? "bg-green-100 text-green-600" : 
+                          "bg-blue-100 text-blue-600"
+                        }`}>
+                          {p.category}
+                        </span>
+                      )}
+                    </td>
 
         {/* 3. Core Specs (Processor, RAM, Storage) */}
         <td className="p-6">
