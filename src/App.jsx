@@ -7,6 +7,7 @@ import FeaturedProductManager from "./pages/featureproduct";
 import DealsAdmin from "./pages/deals";
 import LoginPage from "./pages/LoginPage";
 import ProtectedRoute from "./component/ProtectedRoute";
+import AdminReviewsDashboard from "./pages/AdminReviewsDashboard";
 // import WorkstationPage from "./pages/Workstation";
 
 // 1. Create a Layout component to hold the Navbar + Pages
@@ -33,7 +34,7 @@ function App() {
             <Route path="/featured" element={<FeaturedProductManager />} />
             <Route path="/deals" element={<DealsAdmin />} />
             {/* <Route path="/workstation" element={<WorkstationPage />} /> */}
-
+<Route path="/reviews" element={<AdminReviewsDashboard />} /> {/* ✅ ADDED REVIEWS ROUTE */}
           </Route>
         </Route>
 

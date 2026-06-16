@@ -12,7 +12,6 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // INCREASED TEXT SIZE: Changed text-[11px] to text-[14px] (or text-sm)
   const activeLink = ({ isActive }) => {
     const base = "text-[14px] uppercase font-bold tracking-[0.15em] transition-all duration-300 pb-1 border-b-2";
     return isActive
@@ -30,19 +29,20 @@ const Navbar = () => {
     >
       <div className="max-w-7xl mx-auto px-6 sm:px-10 flex justify-between items-center">
         
-        {/* LOGO - Increased size to match larger text */}
+        {/* LOGO */}
         <div className="text-black font-black tracking-tighter text-2xl cursor-default">
           Iqra
         </div>
 
         {/* DESKTOP LINKS */}
         <div className="hidden lg:flex gap-10 items-center">
-  
           <NavLink to="/products" className={activeLink}>Products</NavLink>
+          <NavLink to="/featured" className={activeLink}>Featured Products</NavLink>
+          <NavLink to="/deals" className={activeLink}>Deals</NavLink>
           <NavLink to="/orders" className={activeLink}>Orders</NavLink>
-                    <NavLink to="/featured" onClick={() => setMobileOpen(false)} className={activeLink}>Featured Products</NavLink>
-    <NavLink to="/deals" onClick={() => setMobileOpen(false)} className={activeLink}>Deals</NavLink>
-    {/* <NavLink to="/workstation" onClick={() => setMobileOpen(false)} className={activeLink}>Workstation</NavLink> */}
+          
+          {/* ✅ FIXED: Added Reviews link to the desktop layout */}
+          <NavLink to="/reviews" className={activeLink}>Reviews</NavLink>
         </div>
 
         {/* MOBILE TOGGLE */}
@@ -57,12 +57,14 @@ const Navbar = () => {
       {/* MOBILE MENU */}
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 top-[70px] bg-white z-50 p-8 flex flex-col gap-8 animate-in fade-in slide-in-from-top-4 duration-300">
-
           <NavLink to="/products" onClick={() => setMobileOpen(false)} className={activeLink}>Products</NavLink>
-          <NavLink to="/orders" onClick={() => setMobileOpen(false)} className={activeLink}>Orders</NavLink>
           <NavLink to="/featured" onClick={() => setMobileOpen(false)} className={activeLink}>Featured Products</NavLink>
           <NavLink to="/deals" onClick={() => setMobileOpen(false)} className={activeLink}>Deals</NavLink>
-          {/* <NavLink to="/workstation" onClick={() => setMobileOpen(false)} className={activeLink}>Workstation</NavLink> */}
+          <NavLink to="/orders" onClick={() => setMobileOpen(false)} className={activeLink}>Orders</NavLink>
+          
+          {/* Mobile Reviews link (Already correct) */}
+          <NavLink to="/reviews" onClick={() => setMobileOpen(false)} className={activeLink}>Reviews</NavLink>
+         
           <div className="h-[1px] w-full bg-gray-100 my-2" />
         </div>
       )}
