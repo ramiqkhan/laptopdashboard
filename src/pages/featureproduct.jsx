@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FaEdit, FaTrash, FaPlus, FaSave, FaTimes, FaStar } from "react-icons/fa";
+import { FaEdit, FaTrash, FaPlus, FaSave, FaTimes, FaStar, FaShieldAlt } from "react-icons/fa";
 
 const FeaturedProductAdmin = () => {
   const API_URL = `${import.meta.env.VITE_API_URL || "https://laptopbackend-seven.vercel.app"}/api/featured-products`;
@@ -10,8 +10,9 @@ const FeaturedProductAdmin = () => {
   const [editFormData, setEditFormData] = useState({});
   const [imageFiles, setImageFiles] = useState([]);
 
+  // ADDED: warranty initialized here
   const [newProduct, setNewProduct] = useState({
-    name: "", price: "", processor: "", ram: "", storage: "", graphics: "", display: "", os: "", features: "", stock: "", averageRating: "", description: ""
+    name: "", price: "", processor: "", ram: "", storage: "", graphics: "", display: "", os: "", features: "", stock: "", averageRating: "", description: "", warranty: ""
   });
 
   const renderImage = (imageSource) => {
@@ -65,7 +66,8 @@ const FeaturedProductAdmin = () => {
       const res = await fetch(`${API_URL}/add`, { method: "POST", body: formData });
       if (res.ok) {
         setShowAddModal(false);
-        setNewProduct({ name: "", price: "", processor: "", ram: "", storage: "", graphics: "", display: "", os: "", features: "", stock: "", averageRating: "", description: "" });
+        // ADDED: Reset warranty field
+        setNewProduct({ name: "", price: "", processor: "", ram: "", storage: "", graphics: "", display: "", os: "", features: "", stock: "", averageRating: "", description: "", warranty: "" });
         setImageFiles([]);
         fetchProducts();
         alert("Featured product added successfully!");
@@ -196,11 +198,19 @@ const FeaturedProductAdmin = () => {
                           <input className="border-b text-xs outline-none p-1" value={editFormData.processor || ""} onChange={(e) => setEditFormData({ ...editFormData, processor: e.target.value })} placeholder="CPU" />
                           <input className="border-b text-xs outline-none p-1" value={editFormData.ram || ""} onChange={(e) => setEditFormData({ ...editFormData, ram: e.target.value })} placeholder="RAM" />
                           <input className="border-b text-xs outline-none p-1" value={editFormData.storage || ""} onChange={(e) => setEditFormData({ ...editFormData, storage: e.target.value })} placeholder="Storage" />
+                          {/* ADDED: Inline Edit entry for Warranty */}
+                          <input className="border-b text-xs outline-none p-1 text-purple-600 font-bold" value={editFormData.warranty || ""} onChange={(e) => setEditFormData({ ...editFormData, warranty: e.target.value })} placeholder="Warranty Status" />
                         </div>
                       ) : (
                         <div className="flex flex-col">
                           <span className="font-semibold text-gray-700">{p.processor}</span>
                           <span className="text-[11px] text-gray-400 uppercase font-bold">{p.ram} | {p.storage}</span>
+                          {/* ADDED: View layout badge for Warranty */}
+                          {p.warranty && (
+                            <span className="text-[10px] text-purple-600 font-black uppercase tracking-tight mt-1 flex items-center gap-1">
+                              <FaShieldAlt size={10} /> {p.warranty}
+                            </span>
+                          )}
                         </div>
                       )}
                     </td>
@@ -210,7 +220,6 @@ const FeaturedProductAdmin = () => {
                         <div className="flex flex-col gap-1">
                           <input className="border-b text-xs outline-none p-1" value={editFormData.stock || ""} onChange={(e) => setEditFormData({ ...editFormData, stock: e.target.value })} placeholder="Stock" />
                           <input className="border-b text-xs outline-none p-1" value={editFormData.graphics || ""} onChange={(e) => setEditFormData({ ...editFormData, graphics: e.target.value })} placeholder="GPU" />
-                          {/* Exact mapping as main products logic */}
                           <textarea className="border rounded text-xs outline-none p-2 mt-1 resize-y h-14 w-full bg-gray-50 focus:bg-white focus:border-black transition-colors" value={editFormData.description || ""} onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })} placeholder="Edit Asset Description" />
                           <div className="flex items-center gap-1 bg-yellow-50 p-1 rounded border border-yellow-100 mt-1">
                             <span className="text-yellow-600 text-[10px] font-black">★</span>
@@ -258,8 +267,7 @@ const FeaturedProductAdmin = () => {
                         </div>
                       ) : (
                         <div className="flex gap-2 justify-end">
-                          {/* FIXED: Spread product explicitly to avoid state structural breakdown */}
-                          <button onClick={() => { setEditingId(p._id); setEditFormData({ ...p, description: p.description || "" }); setImageFiles([]); }} className="p-2 hover:bg-slate-100 text-slate-600 rounded-lg transition-colors"><FaEdit size={12} /></button>
+                          <button onClick={() => { setEditingId(p._id); setEditFormData({ ...p, description: p.description || "", warranty: p.warranty || "" }); setImageFiles([]); }} className="p-2 hover:bg-slate-100 text-slate-600 rounded-lg transition-colors"><FaEdit size={12} /></button>
                           <button onClick={() => handleDelete(p._id)} className="p-2 hover:bg-red-50 text-red-500 rounded-lg transition-colors"><FaTrash size={12} /></button>
                         </div>
                       )}
@@ -312,7 +320,9 @@ const FeaturedProductAdmin = () => {
                   />
                   {imageFiles.length > 0 && (
                     <div className="mt-3 p-2 bg-blue-50/50 rounded-lg border border-blue-100">
-                      <p className="text-[10px] text-blue-600 font-black uppercase tracking-tighter">✅ {imageFiles.length} Assets Staged</p>
+                      <p className="text-[10px] text-blue-600 font-black uppercase tracking-tighter">
+                        ✅ {imageFiles.length} Assets Staged
+                      </p>
                     </div>
                   )}
                 </div>
@@ -331,6 +341,15 @@ const FeaturedProductAdmin = () => {
                   <input placeholder="OS" value={newProduct.os} onChange={(e) => setNewProduct({ ...newProduct, os: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold focus:bg-white border-transparent focus:border-black border" />
                 </div>
                 
+                {/* ADDED: Warranty input field in Modal entries */}
+                <input 
+                  placeholder="Warranty (e.g., 1 Year Local, 1 Month Check)" 
+                  value={newProduct.warranty} 
+                  onChange={(e) => setNewProduct({ ...newProduct, warranty: e.target.value })} 
+                  required 
+                  className="w-full bg-gray-50 p-4 rounded-xl outline-none font-bold focus:bg-white border-transparent focus:border-black border text-purple-700 placeholder:text-purple-400/70" 
+                />
+
                 <textarea 
                   placeholder="Detailed Description (e.g. Generation, Body Condition, Warranty Status...)" 
                   value={newProduct.description} 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FaEdit, FaTrash, FaPlus, FaSave, FaTimes, FaTag, FaCloudUploadAlt } from "react-icons/fa";
+import { FaEdit, FaTrash, FaPlus, FaSave, FaTimes, FaTag, FaCloudUploadAlt, FaShieldAlt } from "react-icons/fa";
 
 const DealsAdmin = () => {
   const API_URL = `${import.meta.env.VITE_API_URL || "https://laptopbackend-murex.vercel.app"}/api/deals`;
@@ -11,12 +11,13 @@ const DealsAdmin = () => {
   const [editFormData, setEditFormData] = useState({});
   const [imageFiles, setImageFiles] = useState([]);
 
-  // 1. Initialized emptyDeal with description key
+  // 1. Initialized emptyDeal with description and warranty keys
   const emptyDeal = {
     name: "", brand: "", category: "deal",
     originalPrice: "", price: "", 
     processor: "", ram: "", storage: "", 
-    gpu: "", display: "", os: "", stock: 0, description: ""
+    gpu: "", display: "", os: "", stock: 0, 
+    description: "", warranty: "" // Added warranty field
   };
 
   const [newDeal, setNewDeal] = useState(emptyDeal);
@@ -42,7 +43,7 @@ const DealsAdmin = () => {
     } catch (err) { 
       console.error("Fetch Error:", err); 
     } finally { 
-      setLoading(false); 
+      loading && setLoading(false); 
     }
   };
 
@@ -128,7 +129,7 @@ const DealsAdmin = () => {
               <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                 <th className="p-8">Unit Info</th>
                 <th className="p-8">Processor & OS</th>
-                <th className="p-8">RAM / Storage / Display & Description</th>
+                <th className="p-8">RAM / Storage / Display / Warranty & Description</th>
                 <th className="p-8">Pricing & Stock</th>
                 <th className="p-8 text-right">Control</th>
               </tr>
@@ -187,14 +188,24 @@ const DealsAdmin = () => {
                           <input className="border border-slate-200 rounded px-2 py-1 text-xs w-1/2 outline-none focus:border-black" placeholder="RAM" value={editFormData.ram || ""} onChange={(e) => setEditFormData({ ...editFormData, ram: e.target.value })} />
                           <input className="border border-slate-200 rounded px-2 py-1 text-xs w-1/2 outline-none focus:border-black" placeholder="Disk" value={editFormData.storage || ""} onChange={(e) => setEditFormData({ ...editFormData, storage: e.target.value })} />
                         </div>
-                        <input className="border border-slate-200 rounded px-2 py-1 text-[10px] outline-none focus:border-black" placeholder="Display" value={editFormData.display || ""} onChange={(e) => setEditFormData({ ...editFormData, display: e.target.value })} />
+                        <div className="flex gap-2">
+                          <input className="border border-slate-200 rounded px-2 py-1 text-[10px] w-1/2 outline-none focus:border-black" placeholder="Display" value={editFormData.display || ""} onChange={(e) => setEditFormData({ ...editFormData, display: e.target.value })} />
+                          <input className="border border-slate-200 rounded px-2 py-1 text-[10px] w-1/2 outline-none focus:border-black font-semibold text-blue-600" placeholder="Warranty" value={editFormData.warranty || ""} onChange={(e) => setEditFormData({ ...editFormData, warranty: e.target.value })} />
+                        </div>
                         {/* Inline Description Editor */}
                         <textarea className="border border-slate-200 rounded px-2 py-1.5 text-xs outline-none focus:border-black resize-y h-14 bg-slate-50 w-full mt-1" placeholder="Edit Deal Description" value={editFormData.description || ""} onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })} />
                       </div>
                     ) : (
                       <div className="flex flex-col">
                         <span className="font-bold text-slate-500 uppercase text-[11px] tracking-widest">{d.ram} / {d.storage}</span>
-                        <span className="text-slate-400 text-xs mt-1">{d.display} Display</span>
+                        <div className="flex items-center gap-3 mt-1 text-xs">
+                          <span className="text-slate-400">{d.display} Display</span>
+                          {d.warranty && (
+                            <span className="flex items-center gap-1 bg-blue-50 text-blue-600 font-bold text-[10px] px-2 py-0.5 rounded-md uppercase tracking-wider">
+                              <FaShieldAlt size={10} /> {d.warranty}
+                            </span>
+                          )}
+                        </div>
                         {/* Dynamic Description View */}
                         {d.description && (
                           <p className="text-[11px] text-gray-500 line-clamp-2 mt-2 italic bg-slate-50 p-2 rounded border border-slate-100 break-words">{d.description}</p>
@@ -232,7 +243,7 @@ const DealsAdmin = () => {
                     ) : (
                       <div className="flex gap-2 justify-end">
                         <button 
-                          onClick={() => { setEditingId(d._id); setEditFormData({ ...d, description: d.description || "" }); }} 
+                          onClick={() => { setEditingId(d._id); setEditFormData({ ...d, description: d.description || "", warranty: d.warranty || "" }); }} 
                           className="p-3 bg-white border border-slate-200 text-black hover:bg-black hover:text-white rounded-xl transition-all shadow-sm active:scale-95"
                         >
                           <FaEdit size={16} />
@@ -288,11 +299,13 @@ const DealsAdmin = () => {
               </div>
 
               {/* Specs Row */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <input placeholder="CPU (e.g. Core i7 12th Gen)" value={newDeal.processor} className="bg-slate-50 p-4 rounded-2xl font-bold outline-none" onChange={e => setNewDeal({ ...newDeal, processor: e.target.value })} />
-                <input placeholder="RAM (e.g. 16GB DDR5)" value={newDeal.ram} className="bg-slate-50 p-4 rounded-2xl font-bold outline-none" onChange={e => setNewDeal({ ...newDeal, ram: e.target.value })} />
-                <input placeholder="Storage (e.g. 512GB NVMe)" value={newDeal.storage} className="bg-slate-50 p-4 rounded-2xl font-bold outline-none" onChange={e => setNewDeal({ ...newDeal, storage: e.target.value })} />
-                <input placeholder="OS (e.g. Windows 11 Home)" value={newDeal.os} className="bg-slate-50 p-4 rounded-2xl font-bold outline-none" onChange={e => setNewDeal({ ...newDeal, os: e.target.value })} />
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+                <input placeholder="CPU (e.g. Core i7)" value={newDeal.processor} className="bg-slate-50 p-4 rounded-2xl font-bold outline-none text-sm" onChange={e => setNewDeal({ ...newDeal, processor: e.target.value })} />
+                <input placeholder="RAM (e.g. 16GB)" value={newDeal.ram} className="bg-slate-50 p-4 rounded-2xl font-bold outline-none text-sm" onChange={e => setNewDeal({ ...newDeal, ram: e.target.value })} />
+                <input placeholder="Storage (e.g. 512GB)" value={newDeal.storage} className="bg-slate-50 p-4 rounded-2xl font-bold outline-none text-sm" onChange={e => setNewDeal({ ...newDeal, storage: e.target.value })} />
+                <input placeholder="OS (e.g. Windows 11)" value={newDeal.os} className="bg-slate-50 p-4 rounded-2xl font-bold outline-none text-sm" onChange={e => setNewDeal({ ...newDeal, os: e.target.value })} />
+                {/* New Warranty Input Field inside Modal */}
+                <input placeholder="Warranty (e.g. 1 Year)" value={newDeal.warranty} className="bg-slate-50 p-4 rounded-2xl font-bold outline-none text-sm border border-transparent focus:border-blue-500 text-blue-600 placeholder:text-gray-400" onChange={e => setNewDeal({ ...newDeal, warranty: e.target.value })} />
               </div>
 
               {/* Description Input Module */}

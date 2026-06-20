@@ -17,7 +17,7 @@ const [selectedCategory, setSelectedCategory] = useState("");
   const [newProduct, setNewProduct] = useState({
     name: "", brand: "", category: "normal", price: "", 
     processor: "", ram: "", storage: "", gpu: "", 
-    display: "", os: "", features: "", stock: 0,averageRating: 0,description: "",
+    display: "", os: "", features: "", stock: 0,averageRating: 0,description: "",warranty: "1 Year Local Warranty",
   });
 
 
@@ -103,7 +103,7 @@ useEffect(() => {
             setNewProduct({
                 name: "", brand: "", category: "normal", price: 0, 
                 processor: "", ram: "", storage: "", gpu: "", 
-                display: "", os: "", features: "", stock: 0, averageRating: 0,description: "",
+                display: "", os: "", features: "", stock: 0, averageRating: 0,description: "",warranty: "1 Year Local Warranty",
             });
             setImageFiles([]);
             fetchProducts();
@@ -349,6 +349,12 @@ formData.append(key, value);
           onChange={(e) => setEditFormData({ ...editFormData, display: e.target.value })} 
           placeholder="Display"
         />
+        <input 
+                            className="border-b text-[10px] font-bold text-red-600 outline-none mt-1" 
+                            value={editFormData.warranty || ""} 
+                            onChange={(e) => setEditFormData({ ...editFormData, warranty: e.target.value })} 
+                            placeholder="Warranty Info"
+                          />
       </div>
       {/* Description Input for Inline Edit */}
       <textarea 
@@ -362,6 +368,7 @@ formData.append(key, value);
     <div className="flex flex-col">
       <span className="text-gray-600">{p.gpu}</span>
       <span className="text-[10px] text-gray-400 font-bold uppercase">{p.os} | {p.display}</span>
+      <span className="text-[10px] text-blue-500 font-bold uppercase mt-1">{p.warranty}</span>
       {p.description && (
         <span className="text-[10px] text-slate-400 italic line-clamp-1 mt-0.5" title={p.description}>
           {p.description}
@@ -478,6 +485,14 @@ formData.append(key, value);
     onChange={(e) => setNewProduct({ ...newProduct, averageRating: e.target.value })} 
     className="bg-gray-50 p-4 rounded-xl outline-none font-bold text-yellow-600" 
   />
+  {/* ✅ LOCATION 4: Modal Creation Form Input for Warranty */}
+                  <input 
+                    placeholder="Warranty Structure (e.g. 1 Year Local Warranty)" 
+                    value={newProduct.warranty}
+                    onChange={(e) => setNewProduct({ ...newProduct, warranty: e.target.value })} 
+                    required 
+                    className="w-full bg-gray-50 p-4 rounded-xl outline-none font-bold border border-transparent text-red-600 focus:bg-white focus:border-black" 
+                  />
                 </div>
 
                 <div className="p-4 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
