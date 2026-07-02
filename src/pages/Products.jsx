@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { FaEdit, FaTrash, FaPlus, FaSave, FaTimes } from "react-icons/fa";
+import { FaEdit, FaTrash, FaPlus, FaSave, FaTimes, FaSearch } from "react-icons/fa";
 
 const ProductAdmin = () => {
- const BASE_URL = import.meta.env.VITE_API_URL || "https://laptopbackend-seven.vercel.app";
+  const BASE_URL = import.meta.env.VITE_API_URL || "https://laptopbackend-seven.vercel.app";
   const API_URL = `${BASE_URL}/api/products`;
   
   console.log("API:", API_URL);
@@ -12,38 +12,32 @@ const ProductAdmin = () => {
   const [editingId, setEditingId] = useState(null);
   const [editFormData, setEditFormData] = useState({});
   const [selectedBrand, setSelectedBrand] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
+  const [searchQuery, setSearchQuery] = useState(""); // ✨ ADDED: Search Query State
   const [imageFiles, setImageFiles] = useState([]);
-const [selectedCategory, setSelectedCategory] = useState("");
   const [newProduct, setNewProduct] = useState({
     name: "", brand: "", category: "normal", price: "", 
     processor: "", ram: "", storage: "", gpu: "", 
-    display: "", os: "", features: "", stock: 0,averageRating: 0,description: "",warranty: "1 Year Local Warranty",
+    display: "", os: "", features: "", stock: 0, averageRating: 0, description: "", warranty: "1 Year Local Warranty",
   });
 
-
-
   const brands = ["HP", "Dell", "Apple", "Lenovo", "Acer", "Sony", "Samsung"];
-  const categories = ["normal", "gaming","workstation","newproduct"];
+  const categories = ["normal", "gaming", "workstation", "newproduct"];
 
   // --- 1. OPTIMIZED IMAGE RENDERER (Fast & Robust) ---
-const renderImage = (imageSource) => {
-  if (!imageSource || imageSource.length === 0) {
-    return "https://via.placeholder.com/150?text=No+Image";
-  }
+  const renderImage = (imageSource) => {
+    if (!imageSource || imageSource.length === 0) {
+      return "https://via.placeholder.com/150?text=No+Image";
+    }
+    if (Array.isArray(imageSource)) {
+      return imageSource[0].url || imageSource[0];
+    }
+    return imageSource.url || imageSource;
+  };
 
-  // Agar array hai toh first URL return karo
-  if (Array.isArray(imageSource)) {
-    return imageSource[0].url || imageSource[0]; // Cloudinary URL ya direct string
-  }
-
-  return imageSource.url || imageSource; // single image object ya URL
-};
-
-
-const fetchProducts = async () => {
+  const fetchProducts = async () => {
     setLoading(true);
     try {
-      // 1. URLSearchParams ka use karein taake dynamic query string ban sake
       const params = new URLSearchParams();
       
       if (selectedBrand) {
@@ -53,13 +47,12 @@ const fetchProducts = async () => {
         params.append("category", selectedCategory);
       }
 
-      // 2. Agar koi parameter hai toh append karein, nahi toh simple base URL
       const queryString = params.toString();
       const url = queryString 
         ? `${BASE_URL}/api/products?${queryString}`
         : `${BASE_URL}/api/products`;
 
-      console.log("Fetching from URL:", url); // Debugging ke liye
+      console.log("Fetching from URL:", url);
 
       const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -74,26 +67,36 @@ const fetchProducts = async () => {
     }
   };
 
+  useEffect(() => {
+    fetchProducts();
+    setSearchQuery(""); // Clear search when filters change to avoid confusion
+  }, [selectedBrand, selectedCategory]);
 
-useEffect(() => {
-  fetchProducts();
-}, [selectedBrand, selectedCategory]);
+  // --- CLIENT-SIDE SEARCH FILTERING ---
+  const filteredProducts = products.filter((p) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      p.name?.toLowerCase().includes(query) ||
+      p.brand?.toLowerCase().includes(query) ||
+      p.processor?.toLowerCase().includes(query) ||
+      p.gpu?.toLowerCase().includes(query)
+    );
+  });
 
   // --- 2. ADD PRODUCT LOGIC ---
- const handleAddProduct = async (e) => {
+  const handleAddProduct = async (e) => {
     e.preventDefault();
     if (imageFiles.length === 0) return alert("Please select at least one image");
 
     const formData = new FormData();
     Object.keys(newProduct).forEach(key => {
         let value = newProduct[key];
-        if (["price","stock","averageRating"].includes(key)) {
-            value = Number(value); // cast to number
+        if (["price", "stock", "averageRating"].includes(key)) {
+            value = Number(value);
         }
         formData.append(key, value);
     });
     
-    // Append multiple images - Backend expects 'images' field
     imageFiles.forEach(file => formData.append("images", file));
 
     try {
@@ -103,7 +106,7 @@ useEffect(() => {
             setNewProduct({
                 name: "", brand: "", category: "normal", price: 0, 
                 processor: "", ram: "", storage: "", gpu: "", 
-                display: "", os: "", features: "", stock: 0, averageRating: 0,description: "",warranty: "1 Year Local Warranty",
+                display: "", os: "", features: "", stock: 0, averageRating: 0, description: "", warranty: "1 Year Local Warranty",
             });
             setImageFiles([]);
             fetchProducts();
@@ -117,24 +120,22 @@ useEffect(() => {
         console.error("Add Product Error:", err);
         alert("Add failed"); 
     }
-};
+  };
 
   // --- 3. ROBUST EDIT LOGIC (Backend Sync) ---
   const handleSaveEdit = async (id) => {
     const formData = new FormData();
     
-    // Clean data: Metadata remove karein taake backend crash na ho
     Object.keys(editFormData).forEach(key => {
-      if (!["_id", "__v", "image", "images", "createdAt", "updatedAt", "ratings", "ratings"].includes(key)) {
-     let value = editFormData[key];
-if (["price","stock","averageRating"].includes(key)) {
-  value = Number(value); // cast to number
-}
-formData.append(key, value);
+      if (!["_id", "__v", "image", "images", "createdAt", "updatedAt", "ratings"].includes(key)) {
+        let value = editFormData[key];
+        if (["price", "stock", "averageRating"].includes(key)) {
+          value = Number(value);
+        }
+        formData.append(key, value);
       }
     });
 
-    // Agar user ne naye files select kiye hain tabhi append karein
     if (imageFiles.length > 0) {
       imageFiles.forEach(file => formData.append("images", file));
     }
@@ -162,7 +163,7 @@ formData.append(key, value);
   const handleDelete = async (id) => {
     if (window.confirm("Permanently delete this unit?")) {
       try {
-        const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+        const res = await fetch(`${BASE_URL}/api/products/${id}`, { method: "DELETE" });
         if (res.ok) fetchProducts();
       } catch (err) { alert("Delete failed"); }
     }
@@ -177,25 +178,42 @@ formData.append(key, value);
             <h1 className="text-4xl font-black uppercase italic tracking-tighter text-slate-900">Standard Inventory</h1>
             <p className="text-[10px] text-blue-600 font-bold tracking-widest uppercase mt-1">Mainstream Assets Management</p>
           </div>
-          <div className="flex gap-4">
-            <select className="bg-gray-100 rounded-xl px-4 py-2 text-[10px] font-bold uppercase outline-none border-2 border-transparent focus:border-black transition-all" onChange={(e) => setSelectedBrand(e.target.value)}>
+          
+          <div className="flex flex-wrap items-center gap-4 w-full md:w-auto justify-end">
+            {/* ✨ ADDED: Search Input Field */}
+            <div className="relative flex items-center bg-gray-100 rounded-xl px-3 py-2 border-2 border-transparent focus-within:border-black transition-all w-full sm:w-64">
+              <FaSearch className="text-gray-400 mr-2" size={12} />
+              <input 
+                type="text" 
+                placeholder="SEARCH ASSETS..." 
+                className="bg-transparent text-[10px] font-bold uppercase outline-none w-full tracking-wider"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery("")} className="text-gray-400 hover:text-black ml-1">
+                  <FaTimes size={10} />
+                </button>
+              )}
+            </div>
+
+            <select className="bg-gray-100 rounded-xl px-4 py-2 text-[10px] font-bold uppercase outline-none border-2 border-transparent focus:border-black transition-all" onChange={(e) => setSelectedBrand(e.target.value)} value={selectedBrand}>
               <option value="">Filter Brand</option>
               {brands.map(b => <option key={b} value={b}>{b}</option>)}
             </select>
-            {/* ✨ ADDED: Category Filter Dropdown */}
- {/* ✨ ADDED: Category Filter Dropdown */}
-<select 
-  className="bg-gray-100 rounded-xl px-4 py-2 text-[10px] font-bold uppercase outline-none border-2 border-transparent focus:border-black transition-all" 
-  onChange={(e) => setSelectedCategory(e.target.value)}
-  value={selectedCategory}
->
-  <option value="">Filter Category</option>
-  {/* values unique lowecase lowercase honi chahiye */}
-  <option value="normal">NORMAL</option>
-  <option value="gaming">GAMING</option>
-  <option value="workstation">WORKSTATION</option>
-  <option value="newproduct">NEW PRODUCT</option>
-</select>
+
+            <select 
+              className="bg-gray-100 rounded-xl px-4 py-2 text-[10px] font-bold uppercase outline-none border-2 border-transparent focus:border-black transition-all" 
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              value={selectedCategory}
+            >
+              <option value="">Filter Category</option>
+              <option value="normal">NORMAL</option>
+              <option value="gaming">GAMING</option>
+              <option value="workstation">WORKSTATION</option>
+              <option value="newproduct">NEW PRODUCT</option>
+            </select>
+            
             <button onClick={() => setShowAddModal(true)} className="bg-black text-white px-8 py-4 rounded-xl font-bold text-[10px] uppercase tracking-widest shadow-lg hover:bg-slate-800 active:scale-95 transition-all">
               <FaPlus className="inline mr-2" /> Add Laptop
             </button>
@@ -212,64 +230,70 @@ formData.append(key, value);
                 <th className="p-6">Core Specs</th>
                 <th className="p-6">GPU & OS</th>
                 <th className="p-6">Inventory</th>
-        
                 <th className="p-6 text-right">Actions</th>
               </tr>
             </thead>
-        <tbody className="text-sm">
-  {loading ? (
-    <tr>
-      <td colSpan="6" className="p-20 text-center font-bold tracking-widest animate-pulse text-gray-300">
-        SYNCING INVENTORY...
-      </td>
-    </tr>
-  ) : (
-    products.map((p) => (
-      <tr key={p._id} className="border-b hover:bg-gray-50/50 transition-colors">
-        {/* 1. Unit Model & Brand */}
-        <td className="p-6">
-          <div className="flex items-center gap-4">
-            <div className="relative">
-<img 
-  src={renderImage(p.images || p.image)} 
-  alt={p.name} 
-  className="w-16 h-12 object-contain rounded-lg border bg-white" 
-/>              {p.images?.length > 1 && (
-                <span className="absolute -top-2 -right-2 bg-black text-white text-[8px] px-1.5 py-0.5 rounded-full font-black">
-                  +{p.images.length - 1}
-                </span>
-              )}
-            </div>
-            <div className="flex flex-col gap-1">
-              {editingId === p._id ? (
-                <>
-                  <input 
-                    className="border-b font-bold text-xs outline-none focus:border-black" 
-                    value={editFormData.name} 
-                    onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })} 
-                    placeholder="Model Name"
-                  />
-                  <select 
-                    className="text-[10px] bg-gray-100 rounded px-1 outline-none font-bold uppercase"
-                    value={editFormData.brand}
-                    onChange={(e) => setEditFormData({ ...editFormData, brand: e.target.value })}
-                  >
-                    {brands.map(b => <option key={b} value={b}>{b}</option>)}
-                  </select>
-                  <input type="file" multiple className="text-[9px] mt-1" onChange={(e) => setImageFiles(Array.from(e.target.files))} />
-                </>
+            <tbody className="text-sm">
+              {loading ? (
+                <tr>
+                  <td colSpan="6" className="p-20 text-center font-bold tracking-widest animate-pulse text-gray-300">
+                    SYNCING INVENTORY...
+                  </td>
+                </tr>
+              ) : filteredProducts.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="p-20 text-center font-bold tracking-widest text-gray-400 uppercase">
+                    No Match Found In Inventory Database.
+                  </td>
+                </tr>
               ) : (
-                <>
-                  <span className="font-bold text-slate-800">{p.name}</span>
-                  <span className="text-[10px] font-black uppercase text-gray-400">{p.brand}</span>
-                </>
-              )}
-            </div>
-          </div>
-        </td>
+                filteredProducts.map((p) => (
+                  <tr key={p._id} className="border-b hover:bg-gray-50/50 transition-colors">
+                    {/* 1. Unit Model & Brand */}
+                    <td className="p-6">
+                      <div className="flex items-center gap-4">
+                        <div className="relative">
+                          <img 
+                            src={renderImage(p.images || p.image)} 
+                            alt={p.name} 
+                            className="w-16 h-12 object-contain rounded-lg border bg-white" 
+                          />              
+                          {p.images?.length > 1 && (
+                            <span className="absolute -top-2 -right-2 bg-black text-white text-[8px] px-1.5 py-0.5 rounded-full font-black">
+                              +{p.images.length - 1}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          {editingId === p._id ? (
+                            <>
+                              <input 
+                                className="border-b font-bold text-xs outline-none focus:border-black" 
+                                value={editFormData.name} 
+                                onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })} 
+                                placeholder="Model Name"
+                              />
+                              <select 
+                                className="text-[10px] bg-gray-100 rounded px-1 outline-none font-bold uppercase"
+                                value={editFormData.brand}
+                                onChange={(e) => setEditFormData({ ...editFormData, brand: e.target.value })}
+                              >
+                                {brands.map(b => <option key={b} value={b}>{b}</option>)}
+                              </select>
+                              <input type="file" multiple className="text-[9px] mt-1" onChange={(e) => setImageFiles(Array.from(e.target.files))} />
+                            </>
+                          ) : (
+                            <>
+                              <span className="font-bold text-slate-800">{p.name}</span>
+                              <span className="text-[10px] font-black uppercase text-gray-400">{p.brand}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </td>
 
-        {/* 2. Category */}
-      <td className="p-6">
+                    {/* 2. Category */}
+                    <td className="p-6">
                       {editingId === p._id ? (
                         <select 
                           className="border rounded text-xs p-1 font-bold uppercase" 
@@ -290,163 +314,159 @@ formData.append(key, value);
                       )}
                     </td>
 
-        {/* 3. Core Specs (Processor, RAM, Storage) */}
-        <td className="p-6">
-          {editingId === p._id ? (
-            <div className="flex flex-col gap-1">
-              <input 
-                className="border-b text-xs outline-none" 
-                value={editFormData.processor} 
-                onChange={(e) => setEditFormData({ ...editFormData, processor: e.target.value })} 
-                placeholder="Processor"
-              />
-              <div className="flex gap-1">
-                <input 
-                  className="border-b text-[10px] w-1/2 outline-none" 
-                  value={editFormData.ram} 
-                  onChange={(e) => setEditFormData({ ...editFormData, ram: e.target.value })} 
-                  placeholder="RAM"
-                />
-                <input 
-                  className="border-b text-[10px] w-1/2 outline-none" 
-                  value={editFormData.storage} 
-                  onChange={(e) => setEditFormData({ ...editFormData, storage: e.target.value })} 
-                  placeholder="Storage"
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-col">
-              <span className="font-medium">{p.processor}</span>
-              <span className="text-[10px] text-gray-400 font-bold uppercase">
-                {p.ram} / {p.storage}
-              </span>
-            </div>
-          )}
-        </td>
-
-        {/* 4. GPU, OS & Display */}
-        {/* 4. GPU, OS & Display */}
-<td className="p-6">
-  {editingId === p._id ? (
-    <div className="flex flex-col gap-1">
-      <input 
-        className="border-b text-xs outline-none" 
-        value={editFormData.gpu || ""} 
-        onChange={(e) => setEditFormData({ ...editFormData, gpu: e.target.value })} 
-        placeholder="GPU"
-      />
-      <div className="flex gap-1">
-        <input 
-          className="border-b text-[10px] w-1/2 outline-none" 
-          value={editFormData.os || ""} 
-          onChange={(e) => setEditFormData({ ...editFormData, os: e.target.value })} 
-          placeholder="OS"
-        />
-        <input 
-          className="border-b text-[10px] w-1/2 outline-none" 
-          value={editFormData.display || ""} 
-          onChange={(e) => setEditFormData({ ...editFormData, display: e.target.value })} 
-          placeholder="Display"
-        />
-        <input 
-                            className="border-b text-[10px] font-bold text-red-600 outline-none mt-1" 
-                            value={editFormData.warranty || ""} 
-                            onChange={(e) => setEditFormData({ ...editFormData, warranty: e.target.value })} 
-                            placeholder="Warranty Info"
+                    {/* 3. Core Specs */}
+                    <td className="p-6">
+                      {editingId === p._id ? (
+                        <div className="flex flex-col gap-1">
+                          <input 
+                            className="border-b text-xs outline-none" 
+                            value={editFormData.processor} 
+                            onChange={(e) => setEditFormData({ ...editFormData, processor: e.target.value })} 
+                            placeholder="Processor"
                           />
-      </div>
-      {/* Description Input for Inline Edit */}
-      <textarea 
-  className="w-full bg-gray-50 p-4 rounded-xl outline-none font-bold" rows="2"
-          value={editFormData.description || ""} 
-        onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })} 
-        placeholder="Description"
-      />
-    </div>
-  ) : (
-    <div className="flex flex-col">
-      <span className="text-gray-600">{p.gpu}</span>
-      <span className="text-[10px] text-gray-400 font-bold uppercase">{p.os} | {p.display}</span>
-      <span className="text-[10px] text-blue-500 font-bold uppercase mt-1">{p.warranty}</span>
-      {p.description && (
-        <span className="text-[10px] text-slate-400 italic line-clamp-1 mt-0.5" title={p.description}>
-          {p.description}
-        </span>
-      )}
-    </div>
-  )}
-</td>
+                          <div className="flex gap-1">
+                            <input 
+                              className="border-b text-[10px] w-1/2 outline-none" 
+                              value={editFormData.ram} 
+                              onChange={(e) => setEditFormData({ ...editFormData, ram: e.target.value })} 
+                              placeholder="RAM"
+                            />
+                            <input 
+                              className="border-b text-[10px] w-1/2 outline-none" 
+                              value={editFormData.storage} 
+                              onChange={(e) => setEditFormData({ ...editFormData, storage: e.target.value })} 
+                              placeholder="Storage"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col">
+                          <span className="font-medium">{p.processor}</span>
+                          <span className="text-[10px] text-gray-400 font-bold uppercase">
+                            {p.ram} / {p.storage}
+                          </span>
+                        </div>
+                      )}
+                    </td>
 
-        {/* 5. Inventory (Price & Stock) */}
-        <td className="p-6">
-          {editingId === p._id ? (
-            <div className="flex flex-col gap-1">
-              <input 
-                type="number"
-                className="border-b font-black text-xs outline-none" 
-                value={editFormData.price} 
-                onChange={(e) => setEditFormData({ ...editFormData, price: e.target.value })} 
-                placeholder="Price"
-              />
-              <input 
-                type="number"
-                className="border-b text-[10px] font-bold outline-none" 
-                value={editFormData.stock} 
-                onChange={(e) => setEditFormData({ ...editFormData, stock: e.target.value })} 
-                placeholder="Stock"
-              />
-  <input 
-        type="number"
-        step="0.1"
-        max="5"
-        className="bg-gray-50 p-1.5 rounded text-[10px] font-bold text-yellow-600 outline-none mt-1" 
-        value={editFormData.averageRating} 
-        onChange={(e) => setEditFormData({ ...editFormData, averageRating: e.target.value })} 
-        placeholder="Rating (0-5)"
-      />
-    
-            </div>
-          ) : (
-            <div className="flex flex-col">
-              <span className="font-black">PKR {p.price?.toLocaleString()}</span>
-              <span className={`text-[10px] font-bold uppercase ${p.stock > 0 ? "text-green-500" : "text-red-500"}`}>
-                Stock: {p.stock}
-              </span>
-              {/* ADD THIS FIELD */}
-<span className="text-[10px] font-bold text-yellow-500 mt-1">
-        ⭐ {p.averageRating || "0.0"}
-      </span>
-            </div>
-          )}
-        </td>
+                    {/* 4. GPU & OS */}
+                    <td className="p-6">
+                      {editingId === p._id ? (
+                        <div className="flex flex-col gap-1">
+                          <input 
+                            className="border-b text-xs outline-none" 
+                            value={editFormData.gpu || ""} 
+                            onChange={(e) => setEditFormData({ ...editFormData, gpu: e.target.value })} 
+                            placeholder="GPU"
+                          />
+                          <div className="flex gap-1">
+                            <input 
+                              className="border-b text-[10px] w-1/2 outline-none" 
+                              value={editFormData.os || ""} 
+                              onChange={(e) => setEditFormData({ ...editFormData, os: e.target.value })} 
+                              placeholder="OS"
+                            />
+                            <input 
+                              className="border-b text-[10px] w-1/2 outline-none" 
+                              value={editFormData.display || ""} 
+                              onChange={(e) => setEditFormData({ ...editFormData, display: e.target.value })} 
+                              placeholder="Display"
+                            />
+                            <input 
+                              className="border-b text-[10px] font-bold text-red-600 outline-none mt-1" 
+                              value={editFormData.warranty || ""} 
+                              onChange={(e) => setEditFormData({ ...editFormData, warranty: e.target.value })} 
+                              placeholder="Warranty Info"
+                            />
+                          </div>
+                          <textarea 
+                            className="w-full bg-gray-50 p-4 rounded-xl outline-none font-bold" rows="2"
+                            value={editFormData.description || ""} 
+                            onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })} 
+                            placeholder="Description"
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex flex-col">
+                          <span className="text-gray-600">{p.gpu}</span>
+                          <span className="text-[10px] text-gray-400 font-bold uppercase">{p.os} | {p.display}</span>
+                          <span className="text-[10px] text-blue-500 font-bold uppercase mt-1">{p.warranty}</span>
+                          {p.description && (
+                            <span className="text-[10px] text-slate-400 italic line-clamp-1 mt-0.5" title={p.description}>
+                              {p.description}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </td>
 
-        {/* 6. Actions */}
-        <td className="p-6 text-right">
-          {editingId === p._id ? (
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => handleSaveEdit(p._id)} className="p-2 bg-black text-white rounded-lg hover:scale-110 transition-transform">
-                <FaSave size={14} />
-              </button>
-              <button onClick={() => { setEditingId(null); setImageFiles([]); }} className="p-2 bg-gray-200 text-gray-600 rounded-lg">
-                <FaTimes size={14} />
-              </button>
-            </div>
-          ) : (
-            <div className="flex gap-2 justify-end">
-              <button onClick={() => { setEditingId(p._id); setEditFormData(p); setImageFiles([]); }} className="p-2 hover:bg-slate-100 text-slate-600 rounded-lg">
-                <FaEdit size={14} />
-              </button>
-              <button onClick={() => handleDelete(p._id)} className="p-2 hover:bg-red-50 text-red-500 rounded-lg">
-                <FaTrash size={14} />
-              </button>
-            </div>
-          )}
-        </td>
-      </tr>
-    ))
-  )}
-</tbody>
+                    {/* 5. Inventory */}
+                    <td className="p-6">
+                      {editingId === p._id ? (
+                        <div className="flex flex-col gap-1">
+                          <input 
+                            type="number"
+                            className="border-b font-black text-xs outline-none" 
+                            value={editFormData.price} 
+                            onChange={(e) => setEditFormData({ ...editFormData, price: e.target.value })} 
+                            placeholder="Price"
+                          />
+                          <input 
+                            type="number"
+                            className="border-b text-[10px] font-bold outline-none" 
+                            value={editFormData.stock} 
+                            onChange={(e) => setEditFormData({ ...editFormData, stock: e.target.value })} 
+                            placeholder="Stock"
+                          />
+                          <input 
+                            type="number"
+                            step="0.1"
+                            max="5"
+                            className="bg-gray-50 p-1.5 rounded text-[10px] font-bold text-yellow-600 outline-none mt-1" 
+                            value={editFormData.averageRating} 
+                            onChange={(e) => setEditFormData({ ...editFormData, averageRating: e.target.value })} 
+                            placeholder="Rating (0-5)"
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex flex-col">
+                          <span className="font-black">PKR {p.price?.toLocaleString()}</span>
+                          <span className={`text-[10px] font-bold uppercase ${p.stock > 0 ? "text-green-500" : "text-red-500"}`}>
+                            Stock: {p.stock}
+                          </span>
+                          <span className="text-[10px] font-bold text-yellow-500 mt-1">
+                            ⭐ {p.averageRating || "0.0"}
+                          </span>
+                        </div>
+                      )}
+                    </td>
+
+                    {/* 6. Actions */}
+                    <td className="p-6 text-right">
+                      {editingId === p._id ? (
+                        <div className="flex gap-2 justify-end">
+                          <button onClick={() => handleSaveEdit(p._id)} className="p-2 bg-black text-white rounded-lg hover:scale-110 transition-transform">
+                            <FaSave size={14} />
+                          </button>
+                          <button onClick={() => { setEditingId(null); setImageFiles([]); }} className="p-2 bg-gray-200 text-gray-600 rounded-lg">
+                            <FaTimes size={14} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex gap-2 justify-end">
+                          <button onClick={() => { setEditingId(p._id); setEditFormData(p); setImageFiles([]); }} className="p-2 hover:bg-slate-100 text-slate-600 rounded-lg">
+                            <FaEdit size={14} />
+                          </button>
+                          <button onClick={() => handleDelete(p._id)} className="p-2 hover:bg-red-50 text-red-500 rounded-lg">
+                            <FaTrash size={14} />
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
           </table>
         </div>
       </div>
@@ -478,14 +498,13 @@ formData.append(key, value);
                 <div className="grid grid-cols-2 gap-4">
                   <input type="number" placeholder="Price (PKR)" onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold" />
                   <input type="number" placeholder="Stock" onChange={(e) => setNewProduct({ ...newProduct, stock: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold" />
-              <input 
-    type="number" 
-    step="0.1" 
-    placeholder="Rating (0-5)" 
-    onChange={(e) => setNewProduct({ ...newProduct, averageRating: e.target.value })} 
-    className="bg-gray-50 p-4 rounded-xl outline-none font-bold text-yellow-600" 
-  />
-  {/* ✅ LOCATION 4: Modal Creation Form Input for Warranty */}
+                  <input 
+                    type="number" 
+                    step="0.1" 
+                    placeholder="Rating (0-5)" 
+                    onChange={(e) => setNewProduct({ ...newProduct, averageRating: e.target.value })} 
+                    className="bg-gray-50 p-4 rounded-xl outline-none font-bold text-yellow-600" 
+                  />
                   <input 
                     placeholder="Warranty Structure (e.g. 1 Year Local Warranty)" 
                     value={newProduct.warranty}
@@ -530,20 +549,20 @@ formData.append(key, value);
                 <p className="text-[10px] font-black uppercase text-purple-600 tracking-widest border-l-4 border-purple-600 pl-2">System Specs</p>
                 <input placeholder="Processor" onChange={(e) => setNewProduct({ ...newProduct, processor: e.target.value })} required className="w-full bg-gray-50 p-4 rounded-xl outline-none font-bold" />
                 <div className="grid grid-cols-2 gap-4">
-                  <input placeholder="RAM" onChange={(e) => setNewProduct({ ...newProduct, ram: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold" />
-                  <input placeholder="Storage" onChange={(e) => setNewProduct({ ...newProduct, storage: e.target.value })} required className="bg-gray-50 p-4 rounded-xl outline-none font-bold" />
+                  <input placeholder="RAM" onChange={(e) => setNewProduct({ ...newProduct, ram: e.target.value })} required className="w-full bg-gray-50 p-4 rounded-xl outline-none font-bold" />
+                  <input placeholder="Storage" onChange={(e) => setNewProduct({ ...newProduct, storage: e.target.value })} required className="w-full bg-gray-50 p-4 rounded-xl outline-none font-bold" />
                 </div>
                 <input placeholder="Graphics" onChange={(e) => setNewProduct({ ...newProduct, gpu: e.target.value })} required className="w-full bg-gray-50 p-4 rounded-xl outline-none font-bold" />
                 <input placeholder="Display Info" onChange={(e) => setNewProduct({ ...newProduct, display: e.target.value })} required className="w-full bg-gray-50 p-4 rounded-xl outline-none font-bold" />
                 <input placeholder="Operating System" onChange={(e) => setNewProduct({ ...newProduct, os: e.target.value })} required className="w-full bg-gray-50 p-4 rounded-xl outline-none font-bold" />
 
                 <textarea placeholder="Key Features" onChange={(e) => setNewProduct({ ...newProduct, features: e.target.value })} className="w-full bg-gray-50 p-4 rounded-xl outline-none font-bold" rows="2" />
-              <textarea 
-    placeholder="Product Description" 
-    value={newProduct.description}
-    onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })} 
-    className="w-full bg-gray-50 p-4 rounded-xl outline-none font-bold" rows="2"
-  />
+                <textarea 
+                  placeholder="Product Description" 
+                  value={newProduct.description}
+                  onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })} 
+                  className="w-full bg-gray-50 p-4 rounded-xl outline-none font-bold" rows="2"
+                />
               </div>
 
               <button type="submit" className="col-span-2 bg-black text-white py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] hover:bg-slate-800 transition-all shadow-xl active:scale-95">
